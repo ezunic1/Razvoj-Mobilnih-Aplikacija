@@ -6,6 +6,7 @@ object NewsData {
 
     fun getAllNews(): List<NewsItem> {
         return listOf(
+
             NewsItem("1", "Novi zakon o radu usvojen u Skupštini", "Zakon donosi brojne izmjene koje se tiču radnog vremena i prava radnika.", null, "Politika", true, "Klix.ba", "03.04.2025"),
             NewsItem("2", "Povećanje minimalne plate u FBiH", "Nakon višemjesečnih pregovora, postignut je dogovor.", null, "Politika", true, "Klix.ba", "02.04.2025"),
             NewsItem("3", "Vlada FBiH usvojila budžet za 2025.", "U fokusu budžeta su zdravstvo i obrazovanje.", null, "Politika", false, "Klix.ba", "01.04.2025"),
@@ -26,6 +27,7 @@ object NewsData {
             NewsItem("18", "Učenici iz BiH razvili mobilnu aplikaciju za slabovide", "Aplikacija koristi tekst-to-speech tehnologiju.", null, "Nauka/tehnologija", true, "Klix.ba", "26.03.2025"),
             NewsItem("19", "Mladi programeri iz Sarajeva kreiraju novu edukativnu igru", "Igra će biti besplatna za sve osnovne škole.", null, "Nauka/tehnologija", false, "Klix.ba", "25.03.2025"),
             NewsItem("20", "BiH tim ide na svjetsku olimpijadu iz informatike", "Nakon odličnih rezultata na regionalnom takmičenju.", null, "Nauka/tehnologija", true, "Klix.ba", "24.03.2025")
+
         )
     }
 }

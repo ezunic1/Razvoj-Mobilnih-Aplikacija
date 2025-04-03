@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import etf.ri.rma.newsfeedapp.data.NewsData
 import etf.ri.rma.newsfeedapp.model.ui.theme.NewsFeedAppTheme
+import etf.ri.rma.newsfeedapp.screen.NewsFeedScreen
 import etf.ri.rma.newsfeedapp.screen.NewsList
 
 class MainActivity : ComponentActivity() {
@@ -48,9 +49,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-
-
 @Preview(showBackground = true)
 @Composable
 fun NewsFeedAppPreview() {
@@ -62,7 +60,7 @@ fun NewsFeedAppPreview() {
 @Composable
 fun NewsFeedAppLayout() {
     val newsList = remember { NewsData.getAllNews() }
-    NewsList(newsList)
+    NewsFeedScreen(newsList)
 }
 
 
