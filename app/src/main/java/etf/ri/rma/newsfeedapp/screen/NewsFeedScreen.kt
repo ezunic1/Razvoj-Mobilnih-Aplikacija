@@ -47,67 +47,98 @@ import etf.ri.rma.newsfeedapp.model.R
 
 @Composable
 fun NewsFeedScreen(newsItems: List<NewsItem>) {
-    val allCategories = listOf("All", "Politika", "Sport", "Nauka/tehnologija", "Ostalo")
+    val allCategories = listOf("Sve", "Politika", "Sport", "Nauka/tehnologija", "Ostalo")
 
-    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedCategory by remember { mutableStateOf("Sve") }
 
-    val filteredNews = if (selectedCategory == "All") {
+    val filteredNews = if (selectedCategory == "Sve") {
         newsItems
     } else {
         newsItems.filter { it.category == selectedCategory }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
         Spacer(modifier = Modifier.height(30.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(allCategories) { category ->
-                val selected = selectedCategory == category
 
-                FilterChip(
-                    onClick = {
-                        if (!selected) selectedCategory = category
-                    },
-                    label = {
-                        Text(
-                            when (category) {
-                                "All" -> "All"
-                                "Politika" -> "Politika"
-                                "Sport" -> "Sport"
-                                "Nauka/tehnologija" -> "Nauka/tehnologija"
-                                "Ostalo" -> "Ostalo"
-                                else -> category
-                            }
+
+        LazyColumn {
+            item {
+                // Prvi red filtera
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf("Sve", "Politika", "Sport").forEach { category ->
+                        val selected = selectedCategory == category
+                        FilterChip(
+                            onClick = {
+                                if (!selected) selectedCategory = category
+                            },
+                            label = {
+                                Text(category)
+                            },
+                            selected = selected,
+                            leadingIcon = if (selected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Filled.Done,
+                                        contentDescription = "Done icon",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null,
+                            modifier = Modifier.testTag(
+                                when (category) {
+                                    "Sve" -> "filter_chip_all"
+                                    "Politika" -> "filter_chip_pol"
+                                    "Sport" -> "filter_chip_spo"
+                                    else -> ""
+                                }
+                            ).weight(1f)
                         )
-                    },
-                    selected = selected,
-                    leadingIcon = if (selected) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Done,
-                                contentDescription = "Done icon",
-                                modifier = Modifier.size(FilterChipDefaults.IconSize)
-                            )
-                        }
-                    } else null,
-                    modifier = Modifier.testTag(
-                        when (category) {
-                            "All" -> "filter_chip_all"
-                            "Politika" -> "filter_chip_pol"
-                            "Sport" -> "filter_chip_spo"
-                            "Nauka/tehnologija" -> "filter_chip_sci"
-                            "Ostalo" -> "filter_chip_ostalo"
-                            else -> ""
-                        }
-                    )
-                )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf("Nauka/tehnologija", "Ostalo").forEach { category ->
+                        val selected = selectedCategory == category
+                        FilterChip(
+                            onClick = {
+                                if (!selected) selectedCategory = category
+                            },
+                            label = {
+                                Text(category)
+                            },
+                            selected = selected,
+                            leadingIcon = if (selected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Filled.Done,
+                                        contentDescription = "Done icon",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null,
+                            modifier = Modifier.testTag(
+                                when (category) {
+                                    "Nauka/tehnologija" -> "filter_chip_sci"
+                                    "Ostalo" -> "filter_chip_ostalo"
+                                    else -> ""
+                                }
+                            ).weight(1f)
+                        )
+                    }
+                }
             }
         }
 
 
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (filteredNews.isEmpty()) {
             MessageCard("Nema pronađenih vijesti u kategoriji " + selectedCategory)
@@ -118,138 +149,9 @@ fun NewsFeedScreen(newsItems: List<NewsItem>) {
 }
 
 
-@Composable
-fun NewsList(newsList: List<NewsItem>, modifier: Modifier = Modifier) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("news_list"),
-       // contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        items(newsList) { news ->
-            if(news.isFeatured)
-                FeaturedNewsCard(news)
-            else
-                StandardNewsCard(news)
-        }
-    }
-}
-
-@Composable
-fun StandardNewsCard(news: NewsItem) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Row(modifier = Modifier.padding(16.dp)) {
-
-            Image(
-                painter = painterResource(id = R.drawable.knjiga),
-                contentDescription = "News image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(5.dp))
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-
-                Text(
-                    text = news.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = news.snippet,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = news.source + " • " + news.publishedDate,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun MessageCard(message: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
-    }
-}
 
 
 
-@Composable
-fun FeaturedNewsCard(news: NewsItem) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
 
-            Image(
-                painter = painterResource(id = R.drawable.knjiga),
-                contentDescription = "Featured news image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2f)
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = news.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = news.snippet,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = news.source + " • " + news.publishedDate,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
 
