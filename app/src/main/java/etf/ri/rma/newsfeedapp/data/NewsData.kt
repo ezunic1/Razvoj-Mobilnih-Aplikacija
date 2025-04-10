@@ -13,7 +13,7 @@ object NewsData {
             NewsItem("4", "BiH dobija nove mjere energetske efikasnosti", "Vlada najavila subvencije za izolaciju i grijanje.", null, "Politika", false, "Klix.ba", "31.03.2025"),
             NewsItem("5", "Predstavnički dom izglasao novi set zakona", "Zakoni se odnose na poreske olakšice za firme koje zapošljavaju mlade.", null, "Politika", false, "Klix.ba", "30.03.2025"),
             NewsItem("6", "Zmajevi pobijedili na domaćem terenu", "Reprezentacija BiH savladala je protivnika rezultatom 3:1.", null, "Sport", false, "SportSport.ba", "02.04.2025"),
-            NewsItem("7", "Premijer liga BiH: Derbi završio bez pobjednika", "Sarajevo i Željezničar odigrali neriješeno 1:1.", null, "Sport", false, "Klix.ba", "01.04.2025"),
+            NewsItem("7", "Premijer liga BiH: Derbi završio bez pobjednika", "Sarajevo i Željezničar odigrali neriješeno 1:1. ", null, "Sport", false, "Klix.ba", "01.04.2025"),
             NewsItem("8", "BiH u četvrtfinalu Evropskog prvenstva", "Sjajna utakmica bh. rukometaša protiv Slovenije.", null, "Sport", true, "Klix.ba", "31.03.2025"),
             NewsItem("9", "Novi rekordi na atletskom mitingu u Zenici", "Mladi takmičari briljirali u disciplini 800 metara.", null, "Sport", false, "Klix.ba", "30.03.2025"),
             NewsItem("10", "Košarkaši Bosne plasirali se u finale Kupa", "Pobjeda protiv Slobode rezultatom 82:77.", null, "Sport", false, "Klix.ba", "29.03.2025"),
