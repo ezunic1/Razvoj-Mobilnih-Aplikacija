@@ -127,7 +127,7 @@ fun NewsFeedScreen(newsItems: List<NewsItem>) {
                             modifier = Modifier.testTag(
                                 when (category) {
                                     "Nauka/tehnologija" -> "filter_chip_sci"
-                                    "Ostalo" -> "filter_chip_ostalo"
+                                    "Ostalo" -> "filter_chip_none"
                                     else -> ""
                                 }
                             ).weight(1f)
