@@ -42,15 +42,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import etf.ri.rma.newsfeedapp.data.NewsData
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
 
 @Composable
-fun NewsFeedScreen(newsItems: List<NewsItem>) {
+fun NewsFeedScreen() {
     val allCategories = listOf("Sve", "Politika", "Sport", "Nauka/tehnologija", "Ostalo")
+    val newsItems = NewsData.getAllNews()
 
     var selectedCategory by remember { mutableStateOf("Sve") }
-
     val filteredNews = if (selectedCategory == "Sve") {
         newsItems
     } else {

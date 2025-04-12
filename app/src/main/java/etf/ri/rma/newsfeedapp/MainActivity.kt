@@ -40,8 +40,8 @@ fun NewsFeedAppPreview() {
 
 @Composable
 fun NewsFeedAppLayout() {
-    val newsList = remember { NewsData.getAllNews() }
-    NewsFeedScreen(newsList)
+    //val newsList = remember { NewsData.getAllNews() }
+    NewsFeedScreen()
 }
 
 

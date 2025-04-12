@@ -57,7 +57,7 @@ fun FeaturedNewsCard(news: NewsItem) {
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = news.source + " • " + news.publishedDate,
+                text = "${news.source} • ${news.publishedDate}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
