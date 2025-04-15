@@ -45,22 +45,56 @@ import androidx.compose.ui.unit.dp
 import etf.ri.rma.newsfeedapp.data.NewsData
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
+import java.text.SimpleDateFormat
+import java.time.LocalDate
 
 @Composable
 fun NewsFeedScreen() {
     val allCategories = listOf("Sve", "Politika", "Sport", "Nauka/tehnologija", "Ostalo")
+    val allCategoriesDate = listOf("U ovom mjesecu", "U ovoj godini")
     val newsItems = NewsData.getAllNews()
 
     var selectedCategory by remember { mutableStateOf("Sve") }
+    var selectedCategoryDate by remember { mutableStateOf("") }
+
     val filteredNews = if (selectedCategory == "Sve") {
-        newsItems
+        if (selectedCategoryDate == "U ovom mjesecu") {
+            val formatter = SimpleDateFormat("dd.MM.yyyy")
+            val prvi = "01.04.2025"
+            val drugi = "30.04.2025"
+            newsItems.filter {
+                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
+        } else if (selectedCategoryDate == "U ovoj godini"){
+            val formatter = SimpleDateFormat("dd.MM.yyyy")
+            val prvi = "01.01.2025"
+            val drugi = "31.12.2025"
+            newsItems.filter {
+                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
+        } else {
+            newsItems
+        }
     } else {
-        newsItems.filter { it.category == selectedCategory }
+        val filteredNewsWithDate =  if (selectedCategoryDate == "U ovom mjesecu") {
+            val formatter = SimpleDateFormat("dd.MM.yyyy")
+            val prvi = "01.04.2025"
+            val drugi = "30.04.2025"
+            newsItems.filter {
+                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
+        } else if (selectedCategoryDate == "U ovoj godini"){
+            val formatter = SimpleDateFormat("dd.MM.yyyy")
+            val prvi = "01.01.2025"
+            val drugi = "31.12.2025"
+            newsItems.filter {
+                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
+        } else {
+            newsItems
+        }
+        filteredNewsWithDate.filter { it.category == selectedCategory }
     }
+
 
     Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
         Spacer(modifier = Modifier.height(30.dp))
-
 
         LazyColumn {
             item {
@@ -138,6 +172,50 @@ fun NewsFeedScreen() {
             }
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyColumn {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf("U ovom mjesecu", "U ovoj godini").forEach { category ->
+                        var selected = selectedCategoryDate == category
+                        FilterChip(
+                            onClick = {
+                               if (!selected) selectedCategoryDate = category
+                               else if(selected){
+                                   selectedCategoryDate = ""
+                                   selected = !selected
+                               }
+
+                            },
+                            label = {
+                                Text(category)
+                            },
+                            selected = selected,
+                            leadingIcon = if (selected) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Filled.Done,
+                                        contentDescription = "Done icon",
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else null,
+                            modifier = Modifier.testTag(
+                                when (category) {
+                                    "U ovom mjesecu" -> "filter_chip_date_month"
+                                    "U ovoj godini" -> "filter_chip_date_year"
+                                    else -> ""
+                                }
+                            ).weight(1f)
+                        )
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
