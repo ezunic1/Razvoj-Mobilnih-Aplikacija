@@ -8,10 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.model.NewsItem
 
 @Composable
-fun NewsList(newsList: List<NewsItem>, modifier: Modifier = Modifier) {
+fun NewsList(newsList: List<NewsItem>, navController: NavController, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -21,9 +22,9 @@ fun NewsList(newsList: List<NewsItem>, modifier: Modifier = Modifier) {
     ) {
         items(newsList) { news ->
             if(news.isFeatured)
-                FeaturedNewsCard(news)
+                FeaturedNewsCard(news, navController)
             else
-                StandardNewsCard(news)
+                StandardNewsCard(news, navController)
         }
     }
 }

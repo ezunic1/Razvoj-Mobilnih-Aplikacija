@@ -42,192 +42,143 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.NewsData
-import etf.ri.rma.newsfeedapp.model.NewsItem
-import etf.ri.rma.newsfeedapp.model.R
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
-import java.time.LocalDate
+import java.util.*
 
-@Composable
-fun NewsFeedScreen() {
-    val allCategories = listOf("Sve", "Politika", "Sport", "Nauka/tehnologija", "Ostalo")
-    val allCategoriesDate = listOf("U ovom mjesecu", "U ovoj godini")
-    val newsItems = NewsData.getAllNews()
+fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
+    if (startMillis == null && endMillis == null) return true
 
-    var selectedCategory by remember { mutableStateOf("Sve") }
-    var selectedCategoryDate by remember { mutableStateOf("") }
+    return try {
+        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        val newsDateMillis = formatter.parse(publishedDate)?.time ?: return false
 
-    val filteredNews = if (selectedCategory == "Sve") {
-        if (selectedCategoryDate == "U ovom mjesecu") {
-            val formatter = SimpleDateFormat("dd.MM.yyyy")
-            val prvi = "01.04.2025"
-            val drugi = "30.04.2025"
-            newsItems.filter {
-                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
-        } else if (selectedCategoryDate == "U ovoj godini"){
-            val formatter = SimpleDateFormat("dd.MM.yyyy")
-            val prvi = "01.01.2025"
-            val drugi = "31.12.2025"
-            newsItems.filter {
-                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
-        } else {
-            newsItems
-        }
-    } else {
-        val filteredNewsWithDate =  if (selectedCategoryDate == "U ovom mjesecu") {
-            val formatter = SimpleDateFormat("dd.MM.yyyy")
-            val prvi = "01.04.2025"
-            val drugi = "30.04.2025"
-            newsItems.filter {
-                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
-        } else if (selectedCategoryDate == "U ovoj godini"){
-            val formatter = SimpleDateFormat("dd.MM.yyyy")
-            val prvi = "01.01.2025"
-            val drugi = "31.12.2025"
-            newsItems.filter {
-                formatter.parse(it.publishedDate) > formatter.parse(prvi) && formatter.parse(it.publishedDate) < formatter.parse(drugi) }
-        } else {
-            newsItems
-        }
-        filteredNewsWithDate.filter { it.category == selectedCategory }
-    }
+        val afterStart = startMillis?.let { newsDateMillis >= it } ?: true
+        val beforeEnd = endMillis?.let { newsDateMillis <= it } ?: true
 
-
-    Column(modifier = Modifier.fillMaxSize().padding(5.dp)) {
-        Spacer(modifier = Modifier.height(30.dp))
-
-        LazyColumn {
-            item {
-                // Prvi red filtera
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    listOf("Sve", "Politika", "Sport").forEach { category ->
-                        val selected = selectedCategory == category
-                        FilterChip(
-                            onClick = {
-                                if (!selected) selectedCategory = category
-                            },
-                            label = {
-                                Text(category)
-                            },
-                            selected = selected,
-                            leadingIcon = if (selected) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Filled.Done,
-                                        contentDescription = "Done icon",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else null,
-                            modifier = Modifier.testTag(
-                                when (category) {
-                                    "Sve" -> "filter_chip_all"
-                                    "Politika" -> "filter_chip_pol"
-                                    "Sport" -> "filter_chip_spo"
-                                    else -> ""
-                                }
-                            ).weight(1f)
-                        )
-                    }
-                }
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    listOf("Nauka/tehnologija", "Ostalo").forEach { category ->
-                        val selected = selectedCategory == category
-                        FilterChip(
-                            onClick = {
-                                if (!selected) selectedCategory = category
-                            },
-                            label = {
-                                Text(category)
-                            },
-                            selected = selected,
-                            leadingIcon = if (selected) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Filled.Done,
-                                        contentDescription = "Done icon",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else null,
-                            modifier = Modifier.testTag(
-                                when (category) {
-                                    "Nauka/tehnologija" -> "filter_chip_sci"
-                                    "Ostalo" -> "filter_chip_none"
-                                    else -> ""
-                                }
-                            ).weight(1f)
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyColumn {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    listOf("U ovom mjesecu", "U ovoj godini").forEach { category ->
-                        var selected = selectedCategoryDate == category
-                        FilterChip(
-                            onClick = {
-                               if (!selected) selectedCategoryDate = category
-                               else if(selected){
-                                   selectedCategoryDate = ""
-                                   selected = !selected
-                               }
-
-                            },
-                            label = {
-                                Text(category)
-                            },
-                            selected = selected,
-                            leadingIcon = if (selected) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Filled.Done,
-                                        contentDescription = "Done icon",
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else null,
-                            modifier = Modifier.testTag(
-                                when (category) {
-                                    "U ovom mjesecu" -> "filter_chip_date_month"
-                                    "U ovoj godini" -> "filter_chip_date_year"
-                                    else -> ""
-                                }
-                            ).weight(1f)
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (filteredNews.isEmpty()) {
-            MessageCard("Nema pronađenih vijesti u kategoriji " + selectedCategory)
-        } else {
-            NewsList(filteredNews)
-        }
+        afterStart && beforeEnd
+    } catch (e: Exception) {
+        false
     }
 }
 
 
+
+@Composable
+fun NewsFeedScreen(
+    navController: NavController,
+    initialSearch: String = "",
+    currentCategory: String = "Sve",
+    currentStartDate: String? = null,
+    currentEndDate: String? = null,
+    currentUnwantedWords: List<String> = emptyList()
+) {
+    val allNewsItems = remember { NewsData.getAllNews() }
+
+    var selectedCategoryLocal by remember(currentCategory) { mutableStateOf(currentCategory) }
+
+    val startMillis = remember(currentStartDate) { parseDateToUTCEpochMillis(currentStartDate) }
+    val endMillis = remember(currentEndDate) { parseDateToUTCEpochMillis(currentEndDate) }
+
+    val unwantedLower = remember(currentUnwantedWords) {
+        currentUnwantedWords.map { it.lowercase() }.toSet()
+    }
+
+    val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
+        allNewsItems.filter { newsItem ->
+            val categoryMatch = selectedCategoryLocal == "Sve" || newsItem.category == selectedCategoryLocal
+            val dateMatch = isWithinSelectedRange(newsItem.publishedDate, startMillis, endMillis)
+            val unwantedMatch = if (unwantedLower.isEmpty()) {
+                true
+            } else {
+                val titleLower = newsItem.title.lowercase()
+                !unwantedLower.any { unwantedWord -> titleLower.contains(unwantedWord) }
+            }
+
+            categoryMatch && dateMatch && unwantedMatch
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("Sve", "Politika", "Sport").forEach { category ->
+                val isSelected = selectedCategoryLocal == category
+                FilterChip(
+                    onClick = { if (!isSelected) selectedCategoryLocal = category },
+                    label = { Text(category) },
+                    selected = isSelected,
+                    leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
+                    modifier = Modifier.testTag(
+                        when (category) {
+                            "Sve" -> "filter_chip_all"
+                            "Politika" -> "filter_chip_pol"
+                            "Sport" -> "filter_chip_spo"
+                            else -> ""
+                        }
+                    ).weight(1f)
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("Nauka/tehnologija", "Ostalo").forEach { category ->
+                val isSelected = selectedCategoryLocal == category
+                FilterChip(
+                    onClick = { if (!isSelected) selectedCategoryLocal = category },
+                    label = { Text(category, maxLines = 1) },
+                    selected = isSelected,
+                    leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
+                    modifier = Modifier.testTag(
+                        when (category) {
+                            "Nauka/tehnologija" -> "filter_chip_sci"
+                            "Ostalo" -> "filter_chip_none"
+                            else -> ""
+                        }
+                    ).weight(1f)
+                )
+            }
+        }
+
+        FilterChip(
+            onClick = {
+                val encodedCategory = URLEncoder.encode(selectedCategoryLocal, StandardCharsets.UTF_8.toString())
+                val encodedStartDate = URLEncoder.encode(currentStartDate ?: "", StandardCharsets.UTF_8.toString())
+                val encodedEndDate = URLEncoder.encode(currentEndDate ?: "", StandardCharsets.UTF_8.toString())
+                val encodedUnwanted = URLEncoder.encode(currentUnwantedWords.joinToString(","), StandardCharsets.UTF_8.toString())
+
+                val route = "filters?" +
+                        "category=$encodedCategory" +
+                        "&startDate=$encodedStartDate" +
+                        "&endDate=$encodedEndDate" +
+                        "&unwanted=$encodedUnwanted"
+
+                navController.navigate(route)
+            },
+            label = { Text("Više filtera ...") },
+            modifier = Modifier.testTag("filter_chip_more"),
+            selected = false
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (filteredNews.isEmpty()) {
+            MessageCard("Nema pronađenih vijesti u kategoriji $selectedCategoryLocal")
+        } else {
+            NewsList(filteredNews, navController)
+        }
+    }
+}
 
 
 
