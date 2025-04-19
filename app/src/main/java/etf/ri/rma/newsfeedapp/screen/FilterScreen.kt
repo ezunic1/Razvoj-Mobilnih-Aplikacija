@@ -1,9 +1,11 @@
 package etf.ri.rma.newsfeedapp.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
@@ -12,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,7 +40,7 @@ fun parseDateToUTCEpochMillis(dateString: String?): Long? {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterScreen(
     navController: NavController,
@@ -182,7 +185,7 @@ fun FilterScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Column(modifier = Modifier.testTag("filter_unwanted_list").padding(start = 15.dp)) {
+               /* Column(modifier = Modifier.testTag("filter_unwanted_list").padding(start = 15.dp)) {
                     if (unwantedWordsSet.value.isEmpty()) {
                         Text("Nema dodanih nepoželjnih riječi.", style = MaterialTheme.typography.bodySmall)
                     } else {
@@ -190,34 +193,82 @@ fun FilterScreen(
                             Text(" - $word", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
+                }*/
+
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("filter_unwanted_list"),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        //.padding(start = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (unwantedWordsSet.value.isEmpty()) {
+                        Text("Nema dodanih riječi.", style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        unwantedWordsSet.value.sorted().forEach { word ->
+                            AssistChip(
+                                modifier = Modifier.height(30.dp),
+                                onClick = {},
+                                label = { Text(word, style = MaterialTheme.typography.bodyMedium) },
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        unwantedWordsSet.value = unwantedWordsSet.value.toMutableSet().apply {
+                                            remove(word)
+                                        }
+                                    }) {
+                                        Icon(Icons.Filled.Close, contentDescription = "Ukloni riječ")
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
         if (showDatePickerDialog) {
-            AlertDialog(
-                onDismissRequest = { showDatePickerDialog = false },
-                confirmButton = {
-                    TextButton(onClick = { showDatePickerDialog = false }) {
-                        Text("Potvrdi")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePickerDialog = false }) {
-                        Text("Otkaži")
-                    }
-                },
-                text = {
-                    DateRangePicker(
-                        state = dateRangePickerState,
+            Dialog(onDismissRequest = { showDatePickerDialog = false }) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("filter_daterange_picker")
-                    )
+                            .fillMaxSize()
+
+                    ) {
+                        DateRangePicker(
+                            state = dateRangePickerState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("filter_daterange_picker")
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { showDatePickerDialog = false }) {
+                                Text("Otkaži")
+                            }
+                           Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = {
+                                showDatePickerDialog = false
+                            }) {
+                                Text("Potvrdi")
+                            }
+                        }
+                    }
                 }
-            )
+            }
         }
+
 
         Button(
             onClick = {

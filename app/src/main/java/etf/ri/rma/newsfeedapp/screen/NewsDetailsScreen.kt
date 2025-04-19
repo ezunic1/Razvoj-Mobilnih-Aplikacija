@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -85,17 +86,16 @@ fun NewsDetailsScreen(news: NewsItem, navController: NavController, initialSearc
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Zatvori detalje",
+        Button(
+            onClick = { navController.popBackStack() },
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 8.dp)
                 .testTag("details_close_button")
-                .clickable {
-                    navController.popBackStack()
-                },
-            style = MaterialTheme.typography.labelLarge
-        )
+        ) {
+            Text("Zatvori detalje")
+        }
+
     }
 }
 
