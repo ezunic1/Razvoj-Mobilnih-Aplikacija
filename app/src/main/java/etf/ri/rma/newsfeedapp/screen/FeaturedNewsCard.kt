@@ -20,16 +20,27 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
+import java.net.URLEncoder
 
 
 @Composable
-fun FeaturedNewsCard(news: NewsItem, navController: NavController) {
+fun FeaturedNewsCard(news: NewsItem,
+                     navController: NavController,
+                     currentCategory: String,
+                     currentStartDate: String?,
+                     currentEndDate: String?,
+                     currentUnwantedWords: List<String>) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clickable {
-                navController.navigate("details/${news.id}")
+                navController.navigate(
+                    "details/${news.id}?category=${URLEncoder.encode(currentCategory, "UTF-8")}" +
+                            "&startDate=${URLEncoder.encode(currentStartDate ?: "", "UTF-8")}" +
+                            "&endDate=${URLEncoder.encode(currentEndDate ?: "", "UTF-8")}" +
+                            "&unwanted=${URLEncoder.encode(currentUnwantedWords.joinToString(","), "UTF-8")}"
+                )
             },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {

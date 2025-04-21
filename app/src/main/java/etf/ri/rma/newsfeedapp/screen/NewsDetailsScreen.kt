@@ -1,5 +1,6 @@
 package etf.ri.rma.newsfeedapp.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,13 +19,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.NewsData
 import etf.ri.rma.newsfeedapp.model.NewsItem
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
 
 @Composable
-fun NewsDetailsScreen(news: NewsItem, navController: NavController, initialSearch: String = "") {
+fun NewsDetailsScreen(news: NewsItem,
+                      navController: NavController,
+                      initialSearch: String = "",
+                      category: String,
+                      startDate: String?,
+                      endDate: String?,
+                      unwantedWords: List<String>) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -79,15 +87,32 @@ fun NewsDetailsScreen(news: NewsItem, navController: NavController, initialSearc
                     .testTag("related_news_title_${index + 1}")
                     .padding(vertical = 4.dp)
                     .clickable {
-                        navController.navigate("details/${item.id}")
+                        val route = "details/${item.id}?" +
+                                "category=${URLEncoder.encode(category, "UTF-8")}" +
+                                "&startDate=${URLEncoder.encode(startDate ?: "", "UTF-8")}" +
+                                "&endDate=${URLEncoder.encode(endDate ?: "", "UTF-8")}" +
+                                "&unwanted=${URLEncoder.encode(unwantedWords.joinToString(","), "UTF-8")}"
+
+                        navController.navigate(route)
                     },
                 style = MaterialTheme.typography.bodyLarge
             )
         }
 
+
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = { navController.popBackStack() },
+            onClick = {
+                val route = "home?" +
+                        "category=${URLEncoder.encode(category, "UTF-8")}" +
+                        "&startDate=${URLEncoder.encode(startDate ?: "", "UTF-8")}" +
+                        "&endDate=${URLEncoder.encode(endDate ?: "", "UTF-8")}" +
+                        "&unwanted=${URLEncoder.encode(unwantedWords.joinToString(","), "UTF-8")}"
+
+                navController.navigate(route) {
+                    popUpTo("home") { inclusive = true }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, bottom = 8.dp)
@@ -95,8 +120,9 @@ fun NewsDetailsScreen(news: NewsItem, navController: NavController, initialSearc
         ) {
             Text("Zatvori detalje")
         }
-
     }
+
+
 }
 
 

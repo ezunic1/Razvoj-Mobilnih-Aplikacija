@@ -1,5 +1,6 @@
 package etf.ri.rma.newsfeedapp.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -185,15 +186,6 @@ fun FilterScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-               /* Column(modifier = Modifier.testTag("filter_unwanted_list").padding(start = 15.dp)) {
-                    if (unwantedWordsSet.value.isEmpty()) {
-                        Text("Nema dodanih nepoželjnih riječi.", style = MaterialTheme.typography.bodySmall)
-                    } else {
-                        unwantedWordsSet.value.sorted().forEach { word ->
-                            Text(" - $word", style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }*/
 
                 FlowRow(
                     modifier = Modifier
@@ -234,7 +226,7 @@ fun FilterScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(MaterialTheme.colorScheme.background),
                 ) {
                     Column(
                         modifier = Modifier
@@ -269,7 +261,6 @@ fun FilterScreen(
             }
         }
 
-
         Button(
             onClick = {
                 val categoryToPass = selectedCategory
@@ -301,4 +292,16 @@ fun FilterScreen(
             Text("Primijeni filtere")
         }
     }
+    BackHandler {
+        val route = "home?" +
+                "category=${URLEncoder.encode(initialCategory, "UTF-8")}" +
+                "&startDate=${URLEncoder.encode(initialStartDate ?: "", "UTF-8")}" +
+                "&endDate=${URLEncoder.encode(initialEndDate ?: "", "UTF-8")}" +
+                "&unwanted=${URLEncoder.encode(initialUnwantedWords.joinToString(","), "UTF-8")}"
+
+        navController.navigate(route) {
+            popUpTo("home") { inclusive = true }
+        }
+    }
+
 }

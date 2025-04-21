@@ -12,7 +12,13 @@ import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.model.NewsItem
 
 @Composable
-fun NewsList(newsList: List<NewsItem>, navController: NavController, modifier: Modifier = Modifier) {
+fun NewsList( newsList: List<NewsItem>,
+              navController: NavController,
+              currentCategory: String,
+              currentStartDate: String?,
+              currentEndDate: String?,
+              currentUnwantedWords: List<String>,
+              modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -22,9 +28,23 @@ fun NewsList(newsList: List<NewsItem>, navController: NavController, modifier: M
     ) {
         items(newsList) { news ->
             if(news.isFeatured)
-                FeaturedNewsCard(news, navController)
+                FeaturedNewsCard(
+                    news,
+                    navController,
+                    currentCategory,
+                    currentStartDate,
+                    currentEndDate,
+                    currentUnwantedWords
+                )
             else
-                StandardNewsCard(news, navController)
+                StandardNewsCard(
+                    news,
+                    navController,
+                    currentCategory,
+                    currentStartDate,
+                    currentEndDate,
+                    currentUnwantedWords
+                )
         }
     }
 }

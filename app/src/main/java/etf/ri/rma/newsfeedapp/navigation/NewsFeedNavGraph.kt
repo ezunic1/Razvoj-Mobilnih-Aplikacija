@@ -66,18 +66,37 @@ fun NewsFeedNavGraph(startText: String? = null) {
         }
 
         composable(
-            "details/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.StringType })
+            route = "details/{id}?category={category}&startDate={startDate}&endDate={endDate}&unwanted={unwanted}",
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType },
+                navArgument("category") { type = NavType.StringType; defaultValue = "Sve" },
+                navArgument("startDate") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("endDate") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("unwanted") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val id = backStackEntry.arguments?.getString("id") ?: return@composable
+            val category = backStackEntry.arguments?.getString("category") ?: "Sve"
+            val startDate = backStackEntry.arguments?.getString("startDate")
+            val endDate = backStackEntry.arguments?.getString("endDate")
+            val unwanted = backStackEntry.arguments?.getString("unwanted")?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+
             val news = NewsData.getAllNews().firstOrNull { it.id == id }
 
             if (news != null) {
-                NewsDetailsScreen(news = news, navController = navController)
+                NewsDetailsScreen(
+                    news = news,
+                    navController = navController,
+                    category = category,
+                    startDate = startDate,
+                    endDate = endDate,
+                    unwantedWords = unwanted
+                )
             } else {
-                Text(text = "Vijest nije pronađena")
+                Text("Vijest nije pronađena")
             }
         }
+
 
         composable(
             route = "filters?category={category}&startDate={startDate}&endDate={endDate}&unwanted={unwanted}",

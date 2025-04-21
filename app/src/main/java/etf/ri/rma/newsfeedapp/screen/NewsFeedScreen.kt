@@ -175,7 +175,15 @@ fun NewsFeedScreen(
         if (filteredNews.isEmpty()) {
             MessageCard("Nema pronađenih vijesti u kategoriji $selectedCategoryLocal")
         } else {
-            NewsList(filteredNews, navController)
+            NewsList(
+                newsList = filteredNews,
+                navController = navController,
+                currentCategory = selectedCategoryLocal,
+                currentStartDate = currentStartDate,
+                currentEndDate = currentEndDate,
+                currentUnwantedWords = currentUnwantedWords
+            )
+
         }
     }
 }
