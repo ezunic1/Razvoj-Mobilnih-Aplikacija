@@ -17,10 +17,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
-import java.text.SimpleDateFormat
-import java.util.*
+import etf.ri.rma.newsfeedapp.data.FilterData
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.*
 
 fun formatMillisDate(millis: Long?): String {
     if (millis == null) return ""
@@ -45,18 +46,14 @@ fun parseDateToUTCEpochMillis(dateString: String?): Long? {
 @Composable
 fun FilterScreen(
     navController: NavController,
-    initialSearch: String = "",
-    initialCategory: String,
-    initialStartDate: String? = null,
-    initialEndDate: String? = null,
-    initialUnwantedWords: List<String> = emptyList(),
+    initialFilter: FilterData,
 ) {
-    var selectedCategory by remember { mutableStateOf(initialCategory) }
+    var selectedCategory by remember { mutableStateOf(initialFilter.category) }
 
     var showDatePickerDialog by remember { mutableStateOf(false) }
     val dateRangePickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = parseDateToUTCEpochMillis(initialStartDate),
-        initialSelectedEndDateMillis = parseDateToUTCEpochMillis(initialEndDate)
+        initialSelectedStartDateMillis = parseDateToUTCEpochMillis(initialFilter.startDate),
+        initialSelectedEndDateMillis = parseDateToUTCEpochMillis(initialFilter.endDate)
     )
     val selectedStartDate = dateRangePickerState.selectedStartDateMillis
     val selectedEndDate = dateRangePickerState.selectedEndDateMillis
@@ -70,7 +67,7 @@ fun FilterScreen(
 
     var unwantedWordInput by remember { mutableStateOf("") }
     val unwantedWordsSet = remember {
-        mutableStateOf(initialUnwantedWords.map { it.lowercase() }.toMutableSet())
+        mutableStateOf(initialFilter.unwantedWords.map { it.lowercase() }.toMutableSet())
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -191,9 +188,8 @@ fun FilterScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("filter_unwanted_list"),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        //.padding(start = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (unwantedWordsSet.value.isEmpty()) {
                         Text("Nema dodanih riječi.", style = MaterialTheme.typography.bodyMedium)
@@ -231,7 +227,6 @@ fun FilterScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-
                     ) {
                         DateRangePicker(
                             state = dateRangePickerState,
@@ -249,7 +244,7 @@ fun FilterScreen(
                             TextButton(onClick = { showDatePickerDialog = false }) {
                                 Text("Otkaži")
                             }
-                           Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             TextButton(onClick = {
                                 showDatePickerDialog = false
                             }) {
@@ -263,21 +258,19 @@ fun FilterScreen(
 
         Button(
             onClick = {
-                val categoryToPass = selectedCategory
-                val startDateToPass = formatMillisDate(selectedStartDate)
-                val endDateToPass = formatMillisDate(selectedEndDate)
-                val unwantedWordsToPass = unwantedWordsSet.value.joinToString(separator = ",")
+                val filterData = FilterData(
+                    category = selectedCategory,
+                    startDate = formatMillisDate(selectedStartDate),
+                    endDate = formatMillisDate(selectedEndDate),
+                    unwantedWords = unwantedWordsSet.value.toList()
+                )
 
-                val encodedCategory = URLEncoder.encode(categoryToPass, StandardCharsets.UTF_8.toString())
-                val encodedStartDate = URLEncoder.encode(startDateToPass, StandardCharsets.UTF_8.toString())
-                val encodedEndDate = URLEncoder.encode(endDateToPass, StandardCharsets.UTF_8.toString())
-                val encodedUnwanted = URLEncoder.encode(unwantedWordsToPass, StandardCharsets.UTF_8.toString())
+                val encodedCategory = URLEncoder.encode(filterData.category, StandardCharsets.UTF_8.toString())
+                val encodedStartDate = URLEncoder.encode(filterData.startDate ?: "", StandardCharsets.UTF_8.toString())
+                val encodedEndDate = URLEncoder.encode(filterData.endDate ?: "", StandardCharsets.UTF_8.toString())
+                val encodedUnwanted = URLEncoder.encode(filterData.unwantedWords.joinToString(","), StandardCharsets.UTF_8.toString())
 
-                val route = "home?" +
-                        "category=$encodedCategory" +
-                        "&startDate=$encodedStartDate" +
-                        "&endDate=$encodedEndDate" +
-                        "&unwanted=$encodedUnwanted"
+                val route = "home?category=$encodedCategory&startDate=$encodedStartDate&endDate=$encodedEndDate&unwanted=$encodedUnwanted"
 
                 navController.navigate(route) {
                     popUpTo("home") { inclusive = true }
@@ -292,16 +285,17 @@ fun FilterScreen(
             Text("Primijeni filtere")
         }
     }
+
     BackHandler {
-        val route = "home?" +
-                "category=${URLEncoder.encode(initialCategory, "UTF-8")}" +
-                "&startDate=${URLEncoder.encode(initialStartDate ?: "", "UTF-8")}" +
-                "&endDate=${URLEncoder.encode(initialEndDate ?: "", "UTF-8")}" +
-                "&unwanted=${URLEncoder.encode(initialUnwantedWords.joinToString(","), "UTF-8")}"
+        val encodedCategory = URLEncoder.encode(initialFilter.category, StandardCharsets.UTF_8.toString())
+        val encodedStartDate = URLEncoder.encode(initialFilter.startDate ?: "", StandardCharsets.UTF_8.toString())
+        val encodedEndDate = URLEncoder.encode(initialFilter.endDate ?: "", StandardCharsets.UTF_8.toString())
+        val encodedUnwanted = URLEncoder.encode(initialFilter.unwantedWords.joinToString(","), StandardCharsets.UTF_8.toString())
+
+        val route = "home?category=$encodedCategory&startDate=$encodedStartDate&endDate=$encodedEndDate&unwanted=$encodedUnwanted"
 
         navController.navigate(route) {
             popUpTo("home") { inclusive = true }
         }
     }
-
 }

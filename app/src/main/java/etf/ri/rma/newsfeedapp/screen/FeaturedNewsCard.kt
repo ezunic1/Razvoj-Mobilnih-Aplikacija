@@ -18,28 +18,27 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import etf.ri.rma.newsfeedapp.data.FilterData
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
 import java.net.URLEncoder
 
-
 @Composable
-fun FeaturedNewsCard(news: NewsItem,
-                     navController: NavController,
-                     currentCategory: String,
-                     currentStartDate: String?,
-                     currentEndDate: String?,
-                     currentUnwantedWords: List<String>) {
+fun FeaturedNewsCard(
+    news: NewsItem,
+    navController: NavController,
+    filterData: FilterData
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clickable {
                 navController.navigate(
-                    "details/${news.id}?category=${URLEncoder.encode(currentCategory, "UTF-8")}" +
-                            "&startDate=${URLEncoder.encode(currentStartDate ?: "", "UTF-8")}" +
-                            "&endDate=${URLEncoder.encode(currentEndDate ?: "", "UTF-8")}" +
-                            "&unwanted=${URLEncoder.encode(currentUnwantedWords.joinToString(","), "UTF-8")}"
+                    "details/${news.id}?category=${URLEncoder.encode(filterData.category, "UTF-8")}" +
+                            "&startDate=${URLEncoder.encode(filterData.startDate ?: "", "UTF-8")}" +
+                            "&endDate=${URLEncoder.encode(filterData.endDate ?: "", "UTF-8")}" +
+                            "&unwanted=${URLEncoder.encode(filterData.unwantedWords.joinToString(","), "UTF-8")}"
                 )
             },
         elevation = CardDefaults.cardElevation(4.dp)

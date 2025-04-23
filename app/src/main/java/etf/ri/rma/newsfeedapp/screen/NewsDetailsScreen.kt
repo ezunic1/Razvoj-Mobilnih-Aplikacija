@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import etf.ri.rma.newsfeedapp.data.FilterData
 import etf.ri.rma.newsfeedapp.data.NewsData
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import java.net.URLEncoder
@@ -24,15 +25,12 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
-
 @Composable
-fun NewsDetailsScreen(news: NewsItem,
-                      navController: NavController,
-                      initialSearch: String = "",
-                      category: String,
-                      startDate: String?,
-                      endDate: String?,
-                      unwantedWords: List<String>) {
+fun NewsDetailsScreen(
+    news: NewsItem,
+    navController: NavController,
+    filters: FilterData
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -88,27 +86,24 @@ fun NewsDetailsScreen(news: NewsItem,
                     .padding(vertical = 4.dp)
                     .clickable {
                         val route = "details/${item.id}?" +
-                                "category=${URLEncoder.encode(category, "UTF-8")}" +
-                                "&startDate=${URLEncoder.encode(startDate ?: "", "UTF-8")}" +
-                                "&endDate=${URLEncoder.encode(endDate ?: "", "UTF-8")}" +
-                                "&unwanted=${URLEncoder.encode(unwantedWords.joinToString(","), "UTF-8")}"
-
+                                "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
+                                "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
+                                "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
+                                "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
                         navController.navigate(route)
                     },
                 style = MaterialTheme.typography.bodyLarge
             )
         }
 
-
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = {
                 val route = "home?" +
-                        "category=${URLEncoder.encode(category, "UTF-8")}" +
-                        "&startDate=${URLEncoder.encode(startDate ?: "", "UTF-8")}" +
-                        "&endDate=${URLEncoder.encode(endDate ?: "", "UTF-8")}" +
-                        "&unwanted=${URLEncoder.encode(unwantedWords.joinToString(","), "UTF-8")}"
-
+                        "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
+                        "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
+                        "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
+                        "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
                 navController.navigate(route) {
                     popUpTo("home") { inclusive = true }
                 }
@@ -122,9 +117,17 @@ fun NewsDetailsScreen(news: NewsItem,
         }
     }
 
-
+    BackHandler {
+        val route = "home?" +
+                "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
+                "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
+                "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
+                "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
+        navController.navigate(route) {
+            popUpTo("home") { inclusive = true }
+        }
+    }
 }
-
 
 fun getRelatedNews(currentNews: NewsItem): List<NewsItem> {
     val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
@@ -143,4 +146,3 @@ fun getRelatedNews(currentNews: NewsItem): List<NewsItem> {
         .map { it.first }
         .take(2)
 }
-

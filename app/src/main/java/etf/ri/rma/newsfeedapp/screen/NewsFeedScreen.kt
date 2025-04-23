@@ -1,52 +1,17 @@
 package etf.ri.rma.newsfeedapp.screen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-
 import androidx.navigation.NavController
+import etf.ri.rma.newsfeedapp.data.FilterData
 import etf.ri.rma.newsfeedapp.data.NewsData
 import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -67,26 +32,18 @@ fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: 
     }
 }
 
-
-
 @Composable
 fun NewsFeedScreen(
     navController: NavController,
-    initialSearch: String = "",
-    currentCategory: String = "Sve",
-    currentStartDate: String? = null,
-    currentEndDate: String? = null,
-    currentUnwantedWords: List<String> = emptyList()
+    filterData: FilterData
 ) {
     val allNewsItems = remember { NewsData.getAllNews() }
+    var selectedCategoryLocal by remember(filterData.category) { mutableStateOf(filterData.category) }
 
-    var selectedCategoryLocal by remember(currentCategory) { mutableStateOf(currentCategory) }
-
-    val startMillis = remember(currentStartDate) { parseDateToUTCEpochMillis(currentStartDate) }
-    val endMillis = remember(currentEndDate) { parseDateToUTCEpochMillis(currentEndDate) }
-
-    val unwantedLower = remember(currentUnwantedWords) {
-        currentUnwantedWords.map { it.lowercase() }.toSet()
+    val startMillis = remember(filterData.startDate) { parseDateToUTCEpochMillis(filterData.startDate) }
+    val endMillis = remember(filterData.endDate) { parseDateToUTCEpochMillis(filterData.endDate) }
+    val unwantedLower = remember(filterData.unwantedWords) {
+        filterData.unwantedWords.map { it.lowercase() }.toSet()
     }
 
     val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
@@ -99,7 +56,6 @@ fun NewsFeedScreen(
                 val titleLower = newsItem.title.lowercase()
                 !unwantedLower.any { unwantedWord -> titleLower.contains(unwantedWord) }
             }
-
             categoryMatch && dateMatch && unwantedMatch
         }
     }
@@ -116,14 +72,7 @@ fun NewsFeedScreen(
                     label = { Text(category) },
                     selected = isSelected,
                     leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
-                    modifier = Modifier.testTag(
-                        when (category) {
-                            "Sve" -> "filter_chip_all"
-                            "Politika" -> "filter_chip_pol"
-                            "Sport" -> "filter_chip_spo"
-                            else -> ""
-                        }
-                    ).weight(1f)
+                    modifier = Modifier.testTag("filter_chip_$category").weight(1f)
                 )
             }
         }
@@ -139,29 +88,24 @@ fun NewsFeedScreen(
                     label = { Text(category, maxLines = 1) },
                     selected = isSelected,
                     leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
-                    modifier = Modifier.testTag(
-                        when (category) {
-                            "Nauka/tehnologija" -> "filter_chip_sci"
-                            "Ostalo" -> "filter_chip_none"
-                            else -> ""
-                        }
-                    ).weight(1f)
+                    modifier = Modifier.testTag("filter_chip_$category").weight(1f)
                 )
             }
         }
 
         FilterChip(
             onClick = {
-                val encodedCategory = URLEncoder.encode(selectedCategoryLocal, StandardCharsets.UTF_8.toString())
-                val encodedStartDate = URLEncoder.encode(currentStartDate ?: "", StandardCharsets.UTF_8.toString())
-                val encodedEndDate = URLEncoder.encode(currentEndDate ?: "", StandardCharsets.UTF_8.toString())
-                val encodedUnwanted = URLEncoder.encode(currentUnwantedWords.joinToString(","), StandardCharsets.UTF_8.toString())
-
+                val updatedFilter = FilterData(
+                    category = selectedCategoryLocal,
+                    startDate = filterData.startDate,
+                    endDate = filterData.endDate,
+                    unwantedWords = filterData.unwantedWords
+                )
                 val route = "filters?" +
-                        "category=$encodedCategory" +
-                        "&startDate=$encodedStartDate" +
-                        "&endDate=$encodedEndDate" +
-                        "&unwanted=$encodedUnwanted"
+                        "category=${URLEncoder.encode(updatedFilter.category, "UTF-8")}" +
+                        "&startDate=${URLEncoder.encode(updatedFilter.startDate ?: "", "UTF-8")}" +
+                        "&endDate=${URLEncoder.encode(updatedFilter.endDate ?: "", "UTF-8")}" +
+                        "&unwanted=${URLEncoder.encode(updatedFilter.unwantedWords.joinToString(","), "UTF-8")}"
 
                 navController.navigate(route)
             },
@@ -175,21 +119,12 @@ fun NewsFeedScreen(
         if (filteredNews.isEmpty()) {
             MessageCard("Nema pronađenih vijesti u kategoriji $selectedCategoryLocal")
         } else {
+            val updatedFilter = filterData.copy(category = selectedCategoryLocal)
             NewsList(
                 newsList = filteredNews,
                 navController = navController,
-                currentCategory = selectedCategoryLocal,
-                currentStartDate = currentStartDate,
-                currentEndDate = currentEndDate,
-                currentUnwantedWords = currentUnwantedWords
+                filterData = updatedFilter
             )
-
         }
     }
 }
-
-
-
-
-
-
