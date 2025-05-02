@@ -67,8 +67,9 @@ fun FilterScreen(
 
     var unwantedWordInput by remember { mutableStateOf("") }
     val unwantedWordsSet = remember {
-        mutableStateOf(initialFilter.unwantedWords.map { it.lowercase() }.toMutableSet())
+        mutableStateOf(initialFilter.unwantedWords.toMutableSet())
     }
+
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         LazyColumn(modifier = Modifier.weight(1f)) {
@@ -171,7 +172,7 @@ fun FilterScreen(
                             val wordToAdd = unwantedWordInput.trim()
                             if (wordToAdd.isNotEmpty()) {
                                 unwantedWordsSet.value = unwantedWordsSet.value.toMutableSet().apply {
-                                    add(wordToAdd.lowercase())
+                                    add(wordToAdd)
                                 }
                                 unwantedWordInput = ""
                             }
@@ -262,7 +263,7 @@ fun FilterScreen(
                     category = selectedCategory,
                     startDate = formatMillisDate(selectedStartDate),
                     endDate = formatMillisDate(selectedEndDate),
-                    unwantedWords = unwantedWordsSet.value.toList()
+                    unwantedWords = unwantedWordsSet.value.map { it.lowercase() } // lowercase za filtriranje
                 )
 
                 val encodedCategory = URLEncoder.encode(filterData.category, StandardCharsets.UTF_8.toString())
@@ -277,6 +278,7 @@ fun FilterScreen(
                     launchSingleTop = true
                 }
             },
+
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, bottom = 8.dp)
@@ -290,7 +292,7 @@ fun FilterScreen(
         val encodedCategory = URLEncoder.encode(initialFilter.category, StandardCharsets.UTF_8.toString())
         val encodedStartDate = URLEncoder.encode(initialFilter.startDate ?: "", StandardCharsets.UTF_8.toString())
         val encodedEndDate = URLEncoder.encode(initialFilter.endDate ?: "", StandardCharsets.UTF_8.toString())
-        val encodedUnwanted = URLEncoder.encode(initialFilter.unwantedWords.joinToString(","), StandardCharsets.UTF_8.toString())
+        val encodedUnwanted = URLEncoder.encode(initialFilter.unwantedWords.map { it.lowercase() }.joinToString(","), StandardCharsets.UTF_8.toString())
 
         val route = "home?category=$encodedCategory&startDate=$encodedStartDate&endDate=$encodedEndDate&unwanted=$encodedUnwanted"
 
@@ -298,4 +300,5 @@ fun FilterScreen(
             popUpTo("home") { inclusive = true }
         }
     }
+
 }
