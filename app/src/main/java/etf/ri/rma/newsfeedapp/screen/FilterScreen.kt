@@ -263,7 +263,7 @@ fun FilterScreen(
                     category = selectedCategory,
                     startDate = formatMillisDate(selectedStartDate),
                     endDate = formatMillisDate(selectedEndDate),
-                    unwantedWords = unwantedWordsSet.value.map { it.lowercase() } // lowercase za filtriranje
+                    unwantedWords = unwantedWordsSet.value.map { it.lowercase() }
                 )
 
                 val encodedCategory = URLEncoder.encode(filterData.category, StandardCharsets.UTF_8.toString())
