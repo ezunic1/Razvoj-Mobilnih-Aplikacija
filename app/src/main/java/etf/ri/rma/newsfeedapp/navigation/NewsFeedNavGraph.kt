@@ -2,13 +2,16 @@ package etf.ri.rma.newsfeedapp.navigation
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import etf.ri.rma.newsfeedapp.data.FilterData
-import etf.ri.rma.newsfeedapp.data.NewsData
+
+import etf.ri.rma.newsfeedapp.data.NewsDAO
 import etf.ri.rma.newsfeedapp.screen.FilterScreen
 import etf.ri.rma.newsfeedapp.screen.NewsDetailsScreen
 import etf.ri.rma.newsfeedapp.screen.NewsFeedScreen
@@ -71,17 +74,19 @@ fun NewsFeedNavGraph() {
                 unwantedWords = unwanted
             )
 
-            val news = NewsData.getAllNews().firstOrNull { it.id == id }
-            if (news != null) {
+            val newsState by produceState(initialValue = null as etf.ri.rma.newsfeedapp.model.NewsItem?, id) {
+                value = NewsDAO.getAllStories().firstOrNull { it.uuid == id }
+            }
+
+            if (newsState != null) {
                 NewsDetailsScreen(
-                    news = news,
+                    news = newsState!!,
                     navController = navController,
                     filters = filterData
                 )
             } else {
                 Text("Vijest nije pronađena")
             }
-
         }
 
         composable(

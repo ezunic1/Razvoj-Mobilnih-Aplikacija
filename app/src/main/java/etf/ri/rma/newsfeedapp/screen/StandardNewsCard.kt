@@ -40,7 +40,7 @@ fun StandardNewsCard(
             .padding(vertical = 8.dp)
             .clickable {
                 navController.navigate(
-                    "details/${news.id}?category=${URLEncoder.encode(filterData.category, "UTF-8")}" +
+                    "details/${news.uuid}?category=${URLEncoder.encode(filterData.category, "UTF-8")}" +
                             "&startDate=${URLEncoder.encode(filterData.startDate ?: "", "UTF-8")}" +
                             "&endDate=${URLEncoder.encode(filterData.endDate ?: "", "UTF-8")}" +
                             "&unwanted=${URLEncoder.encode(filterData.unwantedWords.joinToString(","), "UTF-8")}"

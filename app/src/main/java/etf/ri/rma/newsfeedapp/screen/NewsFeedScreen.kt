@@ -10,17 +10,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.FilterData
-import etf.ri.rma.newsfeedapp.data.NewsData
+import etf.ri.rma.newsfeedapp.data.NewsDAO
+import etf.ri.rma.newsfeedapp.model.NewsItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.*
 
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
     if (startMillis == null && endMillis == null) return true
 
     return try {
-        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        val formatter = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault())
+        formatter.timeZone = java.util.TimeZone.getTimeZone("UTC")
         val newsDateMillis = formatter.parse(publishedDate)?.time ?: return false
 
         val afterStart = startMillis?.let { newsDateMillis >= it } ?: true
@@ -32,15 +33,22 @@ fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: 
     }
 }
 
-
-
 @Composable
 fun NewsFeedScreen(
     navController: NavController,
     filterData: FilterData
 ) {
-    val allNewsItems = remember { NewsData.getAllNews() }
     var selectedCategoryLocal by remember(filterData.category) { mutableStateOf(filterData.category) }
+
+    val categoryMap = mapOf(
+        "Sve" to null,
+        "Politika" to "politics",
+        "Sport" to "sports",
+        "Nauka/tehnologija" to "science",
+        "Ostalo" to "general"
+    )
+
+    val apiCategory = categoryMap[selectedCategoryLocal]
 
     val startMillis = remember(filterData.startDate) { parseDateToUTCEpochMillis(filterData.startDate) }
     val endMillis = remember(filterData.endDate) { parseDateToUTCEpochMillis(filterData.endDate) }
@@ -48,9 +56,20 @@ fun NewsFeedScreen(
         filterData.unwantedWords.map { it.lowercase() }.toSet()
     }
 
+    val allNewsItems by produceState(initialValue = emptyList<NewsItem>(), selectedCategoryLocal) {
+        println("Fetching news for category: $selectedCategoryLocal (apiCategory=$apiCategory)")
+        value = withContext(Dispatchers.IO) {
+            if (apiCategory == null) {
+                NewsDAO.getAllStories()
+            } else {
+                NewsDAO.getTopStoriesByCategory(apiCategory)
+            }
+        }
+    }
+
     val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
         allNewsItems.filter { newsItem ->
-            val categoryMatch = selectedCategoryLocal == "Sve" || newsItem.category == selectedCategoryLocal
+            val categoryMatch = selectedCategoryLocal == "Sve" || newsItem.category.equals(apiCategory, ignoreCase = true)
             val dateMatch = isWithinSelectedRange(newsItem.publishedDate, startMillis, endMillis)
             val unwantedMatch = if (unwantedLower.isEmpty()) {
                 true

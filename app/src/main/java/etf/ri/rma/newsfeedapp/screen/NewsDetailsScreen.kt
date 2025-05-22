@@ -2,28 +2,21 @@ package etf.ri.rma.newsfeedapp.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.FilterData
-import etf.ri.rma.newsfeedapp.data.NewsData
+import etf.ri.rma.newsfeedapp.data.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import java.net.URLEncoder
-import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
 
 @Composable
 fun NewsDetailsScreen(
@@ -31,6 +24,15 @@ fun NewsDetailsScreen(
     navController: NavController,
     filters: FilterData
 ) {
+
+    val similarNewsState = produceState(initialValue = emptyList<NewsItem>(), news.uuid) {
+        value = try {
+            NewsDAO.getSimilarStories(news.uuid)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -77,15 +79,14 @@ fun NewsDetailsScreen(
             style = MaterialTheme.typography.headlineSmall
         )
 
-        val relatedNews = getRelatedNews(news)
-        relatedNews.forEachIndexed { index, item ->
+        similarNewsState.value.forEachIndexed { index, item ->
             Text(
                 text = item.title,
                 modifier = Modifier
                     .testTag("related_news_title_${index + 1}")
                     .padding(vertical = 4.dp)
                     .clickable {
-                        val route = "details/${item.id}?" +
+                        val route = "details/${item.uuid}?" +
                                 "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
                                 "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
                                 "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
@@ -127,22 +128,4 @@ fun NewsDetailsScreen(
             popUpTo("home") { inclusive = true }
         }
     }
-}
-
-fun getRelatedNews(currentNews: NewsItem): List<NewsItem> {
-    val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-    formatter.timeZone = TimeZone.getTimeZone("UTC")
-
-    val currentDate = formatter.parse(currentNews.publishedDate)?.time ?: return emptyList()
-
-    return NewsData.getAllNews()
-        .filter { it.category == currentNews.category && it.id != currentNews.id }
-        .mapNotNull { news ->
-            val newsDate = formatter.parse(news.publishedDate)?.time ?: return@mapNotNull null
-            val timeDiff = kotlin.math.abs(newsDate - currentDate)
-            Triple(news, timeDiff, news.title)
-        }
-        .sortedWith(compareBy({ it.second }, { it.third }))
-        .map { it.first }
-        .take(2)
 }
