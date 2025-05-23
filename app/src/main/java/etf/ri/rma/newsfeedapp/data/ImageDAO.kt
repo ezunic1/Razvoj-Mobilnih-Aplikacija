@@ -8,7 +8,9 @@ class ImageDAO {
     private val tagCache = ConcurrentHashMap<String, List<String>>()
 
     suspend fun getTags(imageURL: String): List<String> {
+        println("nesto")
         if (!imageURL.startsWith("http")) throw InvalidImageURLException()
+        println("nesto")
         return tagCache[imageURL] ?: run {
             val response = ImageAPI.service.getTags(imageURL)
             val tags = response.result.tags.mapNotNull { it.tag["en"] }

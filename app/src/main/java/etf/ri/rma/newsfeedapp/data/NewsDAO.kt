@@ -11,8 +11,9 @@ object NewsDAO {
     private val allNews = LinkedHashMap<String, NewsItem>()
     private val categoryTimestamps = mutableMapOf<String, Long>()
     private val featuredCache = mutableMapOf<String, List<String>>()
+    private val similarNewsCache = mutableMapOf<String, List<NewsItem>>() // <- cache za slične vijesti
 
-    private val apiKey = "7SyaeyIBhk9LyYR7VCtUS9Uu600uAPH7rdkzduTw"
+    private val apiKey = "dpzb1agyfId5vXybmDlDZvuayjpFLpn26iZy3P4O"
     private val locale = "us"
 
     init {
@@ -32,15 +33,18 @@ object NewsDAO {
             allNews[news.uuid] = news
         }
     }
+
     suspend fun getTopStoriesByCategory(category: String, limit: Int = 3): List<NewsItem> {
         val now = System.currentTimeMillis()
         val lastFetched = categoryTimestamps[category] ?: 0L
         println("Category: $category, lastFetched: $lastFetched, now: $now")
+
         val existing = allNews.values.filter {
             it.category.equals(category, ignoreCase = true)
         }
 
-        return if (now - lastFetched < 0 && existing.isNotEmpty()) {//30_000 za 30 sekundi
+        return if (now - lastFetched < 30_000 && existing.isNotEmpty()) {
+            println("Returning cached news for category: $category")
             val featuredIds = featuredCache[category].orEmpty()
             existing.map { it.copy(isFeatured = it.uuid in featuredIds) }
         } else {
@@ -51,7 +55,12 @@ object NewsDAO {
                     category = category,
                     limit = limit
                 )
+
+                println("API response for category $category: $response")
+                println("Fetched news count: ${response.data?.size ?: 0}")
+
                 val newItems = response.data?.map { it.toNewsItem() } ?: emptyList()
+                println("New fetched UUIDs: ${newItems.map { it.uuid }}")
 
                 val newFeatured = mutableListOf<NewsItem>()
                 for (item in newItems) {
@@ -77,13 +86,13 @@ object NewsDAO {
 
                 newFeatured + nonFeatured
             } catch (e: Exception) {
+                println("Greška u pozivu za kategoriju $category: ${e.message}")
                 e.printStackTrace()
                 allNews.values.filter {
                     it.category.equals(category, ignoreCase = true)
                 }
             }
         }
-
     }
 
     fun getAllStories(): List<NewsItem> {
@@ -92,14 +101,40 @@ object NewsDAO {
 
     suspend fun getSimilarStories(uuid: String): List<NewsItem> {
         if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+$"))) throw InvalidUUIDException()
+        similarNewsCache[uuid]?.let { return it }
 
-        val baseItem = allNews[uuid] ?: return listOf()
-        val sameCategory = allNews.values.filter { it.category == baseItem.category && it.uuid != uuid }
+        val baseItem = allNews[uuid] ?: return emptyList()
 
-        return sameCategory
-            .sortedByDescending { similarity(it.title, baseItem.title) }
-            .take(2)
+        return try {
+            val response = NewsAPI.service.getSimilarNews(
+                uuid = uuid,
+                apiKey = apiKey,
+                language = "en",
+                publishedOn = baseItem.publishedDate.split("-").reversed().joinToString("-")
+            )
+
+            val result = response.data
+                .map { it.toNewsItem() }
+                .filter { it.uuid != uuid }
+                .take(2)
+
+            for (item in result) {
+                if (!allNews.containsKey(item.uuid)) {
+                    allNews[item.uuid] = item
+                }
+            }
+
+            similarNewsCache[uuid] = result
+            result
+        } catch (e: Exception) {
+            println("Greška u getSimilarNews: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
     }
+
+
+
 
     private fun ApiNewsItem.toNewsItem(): NewsItem {
         return NewsItem(

@@ -15,6 +15,7 @@ import etf.ri.rma.newsfeedapp.model.NewsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
+import kotlin.coroutines.cancellation.CancellationException
 
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
     if (startMillis == null && endMillis == null) return true
@@ -58,12 +59,21 @@ fun NewsFeedScreen(
 
     val allNewsItems by produceState(initialValue = emptyList<NewsItem>(), selectedCategoryLocal) {
         println("Fetching news for category: $selectedCategoryLocal (apiCategory=$apiCategory)")
-        value = withContext(Dispatchers.IO) {
-            if (apiCategory == null) {
-                NewsDAO.getAllStories()
-            } else {
-                NewsDAO.getTopStoriesByCategory(apiCategory)
+        value = try {
+            withContext(Dispatchers.IO) {
+                if (apiCategory == null) {
+                    NewsDAO.getAllStories()
+                } else {
+                    NewsDAO.getTopStoriesByCategory(apiCategory).distinctBy { it.uuid }
+                }
             }
+        } catch (e: CancellationException) {
+            println("Cancelled: ${e.message}")
+            emptyList()
+        } catch (e: Exception) {
+            println("Greška pri dohvaćanju vijesti: ${e.message}")
+            e.printStackTrace()
+            emptyList()
         }
     }
 
@@ -160,3 +170,4 @@ fun NewsFeedScreen(
         }
     }
 }
+
