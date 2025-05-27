@@ -13,9 +13,10 @@ interface NewsApiService {
     suspend fun getTopNews(
         @Query("api_token") apiKey: String,
         @Query("locale") locale: String,
-        @Query("category") category: String,
+        @Query("categories") category: String,
         @Query("limit") limit: Int
     ): NewsApiResponse
+
 
     @GET("news/all")
     suspend fun getAllNews(
