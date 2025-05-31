@@ -10,8 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import etf.ri.rma.newsfeedapp.data.FilterData
-
-import etf.ri.rma.newsfeedapp.data.NewsDAO
+import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.screen.FilterScreen
 import etf.ri.rma.newsfeedapp.screen.NewsDetailsScreen
 import etf.ri.rma.newsfeedapp.screen.NewsFeedScreen
@@ -19,7 +18,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 @Composable
-fun NewsFeedNavGraph() {
+fun NewsFeedNavGraph(newsDAO: NewsDAO) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "home") {
@@ -47,7 +46,8 @@ fun NewsFeedNavGraph() {
 
             NewsFeedScreen(
                 navController = navController,
-                filterData = filterData
+                filterData = filterData,
+                newsDAO = newsDAO
             )
         }
 
@@ -75,7 +75,7 @@ fun NewsFeedNavGraph() {
             )
 
             val newsState by produceState(initialValue = null as etf.ri.rma.newsfeedapp.model.NewsItem?, id) {
-                value = NewsDAO.getAllStories().firstOrNull { it.uuid == id }
+                value = newsDAO.getAllStories().firstOrNull { it.uuid == id }
             }
 
             if (newsState != null) {

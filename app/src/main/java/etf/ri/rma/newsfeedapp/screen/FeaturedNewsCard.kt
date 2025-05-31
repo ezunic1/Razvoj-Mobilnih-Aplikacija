@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import etf.ri.rma.newsfeedapp.data.FilterData
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
 import java.net.URLEncoder
@@ -23,7 +22,7 @@ import java.net.URLEncoder
 fun FeaturedNewsCard(
     news: NewsItem,
     navController: NavController,
-    filterData: FilterData
+    filterData: etf.ri.rma.newsfeedapp.data.FilterData
 ) {
     Card(
         modifier = Modifier
@@ -40,12 +39,11 @@ fun FeaturedNewsCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(news.imageUrl)
                     .crossfade(true)
-                    .error(R.drawable.knjiga)     // placeholder ako URL ne radi
+                    .error(R.drawable.knjiga)
                     .placeholder(R.drawable.knjiga)
                     .build(),
                 contentDescription = "Featured news image",
@@ -73,7 +71,6 @@ fun FeaturedNewsCard(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "${news.source} • ${news.publishedDate}",
                 style = MaterialTheme.typography.labelSmall,

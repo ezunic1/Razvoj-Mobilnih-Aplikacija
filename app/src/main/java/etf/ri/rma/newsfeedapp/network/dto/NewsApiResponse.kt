@@ -1,7 +1,13 @@
 package etf.ri.rma.newsfeedapp.network.dto
 
-import etf.ri.rma.newsfeedapp.network.dto.ApiNewsItem
-
 data class NewsApiResponse(
-    val data: List<ApiNewsItem>
+    val meta: MetaData,
+    val data: List<ApiNewsItem>?
+)
+
+data class MetaData(
+    val found: Int,
+    val returned: Int,
+    val limit: Int,
+    val page: Int
 )

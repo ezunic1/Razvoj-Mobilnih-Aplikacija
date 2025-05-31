@@ -1,6 +1,6 @@
 package etf.ri.rma.newsfeedapp.network
 
-import etf.ri.rma.newsfeedapp.network.dto.ImageAPIService
+import etf.ri.rma.newsfeedapp.data.network.api.ImageApiService
 import okhttp3.Credentials
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -23,11 +23,12 @@ object ImageAPI {
         .addInterceptor(authInterceptor)
         .build()
 
-    private val retrofit: Retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val service: ImageAPIService = retrofit.create(ImageAPIService::class.java)
+    val service: ImageApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ImageApiService::class.java)
+    }
 }

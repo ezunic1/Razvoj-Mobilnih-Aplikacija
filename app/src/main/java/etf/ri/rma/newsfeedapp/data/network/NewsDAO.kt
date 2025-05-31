@@ -1,12 +1,14 @@
-package etf.ri.rma.newsfeedapp.data
+package etf.ri.rma.newsfeedapp.data.network
 
+import etf.ri.rma.newsfeedapp.data.network.api.NewsApiService
+import etf.ri.rma.newsfeedapp.data.network.exception.InvalidUUIDException
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.network.NewsAPI
 import etf.ri.rma.newsfeedapp.network.dto.ApiNewsItem
-import etf.ri.rma.newsfeedapp.util.InvalidUUIDException
+import etf.ri.rma.newsfeedapp.network.dto.NewsApiResponse
 import java.util.*
 
-object NewsDAO {
+class NewsDAO {
 
     private val allNews = LinkedHashMap<String, NewsItem>()
     private val newsOrder = mutableListOf<String>()
@@ -14,10 +16,13 @@ object NewsDAO {
     private val featuredCache = mutableMapOf<String, List<String>>()
     private val similarNewsCache = mutableMapOf<String, List<NewsItem>>()
 
-    private const val apiKey = "6tk6YmWJho7XfRKrwKxppkBnOU2U3tqZvu2uTipR"
-    private const val locale = "us"
+    private var apiService: NewsApiService
+    private var apiKey: String
+    private val locale = "us"
 
     init {
+        apiService = NewsAPI.service
+        apiKey = "6tk6YmWJho7XfRKrwKxppkBnOU2U3tqZvu2uTipR"
         val initialNews = listOf(
             NewsItem(
                 "fa69da54-922d-4854-9b18-88d1f7b173fc",
@@ -77,7 +82,7 @@ object NewsDAO {
             NewsItem(
                 "afbce5e0-2714-4f43-9ec6-fa3b43aca6f1",
                 "Yunus To Continue As Bangladesh’s Interim Government Chief: Adviser",
-                "Muhammad Yunus will remain as the head of Bangladesh’s interim government, an adviser in his cabinet said…",
+                "Muhammad Yunus će i dalje biti na čelu Bangladeške privremene vlade, rekao je savjetnik",
                 "https://media.assettype.com/bloombergquint%2F2025-04-03%2F88d8ijhs%2FYunus-Xi-Jinping.jpg?w=1200&auto=format%2Ccompress&ogImage=true",
                 "business",
                 false,
@@ -99,7 +104,7 @@ object NewsDAO {
             NewsItem(
                 "a18ab948-f17f-4098-b964-789c191df9ac",
                 "King Charles' Canada Tour Has Donald Trump Hanging Over It",
-                "King Charles III will open the Canadian Parliament next week in a historic ceremony against the backdrop of…",
+                "King Charles III će otvoriti kanadski parlament u povijesnoj ceremoniji “jubileja”",
                 "https://biztoc.com/cdn/d79f7ca30678bc47_s.webp",
                 "entertainment",
                 false,
@@ -110,7 +115,7 @@ object NewsDAO {
             NewsItem(
                 "37555907-4e98-4f8b-bc1c-cf93ad298a13",
                 "A US Navy captain tells BI his heart was racing when his warship came under Houthi fire for the first time",
-                "USS Stockdale is one of many American warships that have come under Houthi fire since the fall of 2023",
+                "USS Stockdale je jedan od mnogih američkih ratnih brodova koje su Houthi snage napale od kraja 2023.",
                 "https://biztoc.com/cdn/5e9a772242eff6da_s.webp",
                 "general",
                 false,
@@ -121,7 +126,7 @@ object NewsDAO {
             NewsItem(
                 "453fb895-2348-4464-b55a-ac072ca192dd",
                 "MP Tejasvi Surya presents 15-point action plan to transform Bengaluru",
-                "BJP MP Tejasvi Surya proposed a 15-point agenda to modernize Bengaluru's civic administration, traffic management, and public transport",
+                "BJP MP Tejasvi Surya predložio 15 koraka za modernizaciju infrastrukture Bengaluru, upravljanje prometom i javni prijevoz",
                 "https://img.etimg.com/thumb/msid-121380393,width-1200,height-630,imgsize-78462,overlay-economictimes/articleshow.jpg",
                 "politics",
                 false,
@@ -132,7 +137,7 @@ object NewsDAO {
             NewsItem(
                 "596e87e3-5daf-427a-9472-2faa3dfb53a8",
                 "UPSC CSE Prelims 2025 Live Updates: Check Key Guidelines, Marking Scheme",
-                "The UPSC will conduct the Civil Services Preliminary Examination on May 25",
+                "UPSC će održati preliminarni ispit 25. svibnja 2025.",
                 "https://c.ndtvimg.com/2025-05/s94sfk9o_upsc-prelims-2024-image_625x300_24_May_25.jpeg",
                 "general",
                 false,
@@ -143,7 +148,7 @@ object NewsDAO {
             NewsItem(
                 "c9c5f62f-1c28-4680-9463-1d906f78a449",
                 "Work-life balance: NVIDIA CEO's 7-day grind gets Paytm's Vijay Shekhar Sharma's stamp of approval",
-                "Paytm CEO Vijay Shekhar Sharma reposted a video of what NVIDIA CEO Jensen Huang's work-life balance is like",
+                "Paytm CEO Vijay Shekhar Sharma podijelio video o radnom ritmu NVIDIA CEO-ja",
                 "https://www.livemint.com/lm-img/img/2025/05/24/1600x900/nvidia_ceo_merge_1748087683405_1748087689708.jpg",
                 "sports",
                 false,
@@ -161,31 +166,53 @@ object NewsDAO {
         newsOrder.add(0, item.uuid)
     }
 
+    fun setApiService(service: NewsApiService) {
+        allNews.clear()
+        newsOrder.clear()
+        categoryTimestamps.clear()
+        featuredCache.clear()
+        similarNewsCache.clear()
+        apiService = service
+    }
+
+    fun setApiKey(token: String) {
+        apiKey = token
+    }
+
     suspend fun getTopStoriesByCategory(category: String, limit: Int = 3): List<NewsItem> {
+        println("getTopStoriesByCategory called with category=$category, apiKey=$apiKey")
         val now = System.currentTimeMillis()
         val lastFetched = categoryTimestamps[category] ?: 0L
-        val existing = allNews.values.filter { it.category.equals(category, true) }
+        println("lastFetched[$category]=$lastFetched, now=$now")
+        val existing = allNews.values.filter { it.category.equals(category, ignoreCase = true) }
+        println("existing.size before API call = ${existing.size}")
 
         if (now - lastFetched < 30_000 && existing.isNotEmpty()) {
+            println("Returning cached news for category=$category")
             val featuredIds = featuredCache[category].orEmpty()
-            return existing.map { it.copy(isFeatured = it.uuid in featuredIds) }
+            return existing.map {
+                println("  cached item: uuid=${it.uuid}, isFeatured=${it.uuid in featuredIds}")
+                it.copy(isFeatured = it.uuid in featuredIds)
+            }
         }
 
         return try {
-            val response = NewsAPI.service.getTopNews(
+            println("Making network request for category=$category")
+            val response: NewsApiResponse = apiService.getTopNews(
                 apiKey = apiKey,
                 locale = locale,
                 category = category,
                 limit = limit
             )
-
-            println("Fetched items for category $category: " + response.data?.map { it.categories })
-
-            val newItems = response.data?.map { it.toNewsItem(forcedCategory = category) } ?: emptyList()
+            println("Response received: meta.found=${response.meta.found}, data.size=${response.data?.size ?: 0}")
+            val newItems: List<NewsItem> = response.data
+                ?.map { it.toNewsItem(forcedCategory = category) }
+                ?: emptyList()
+            println("NewItems mapped, count=${newItems.size}")
 
             val newFeatured = mutableListOf<NewsItem>()
-
             for (item in newItems) {
+                println("  preparing featured item: uuid=${item.uuid}, title=${item.title}")
                 val prepared = item.copy(isFeatured = true)
                 insertOnTop(prepared)
                 newFeatured.add(prepared)
@@ -193,63 +220,84 @@ object NewsDAO {
 
             categoryTimestamps[category] = now
             featuredCache[category] = newFeatured.map { it.uuid }
+            println("Updated categoryTimestamps and featuredCache for $category")
 
             val nonFeatured = newsOrder
                 .mapNotNull { allNews[it] }
                 .filter {
-                    it.category.equals(
-                        category,
-                        true
-                    ) && it.uuid !in featuredCache[category].orEmpty()
+                    it.category.equals(category, ignoreCase = true) &&
+                            it.uuid !in featuredCache[category].orEmpty()
                 }
-                .map { it.copy(isFeatured = false) }
+                .map {
+                    println("  non-featured item: uuid=${it.uuid}, title=${it.title}")
+                    it.copy(isFeatured = false)
+                }
 
+            println("Returning ${newFeatured.size + nonFeatured.size} items (featured=${newFeatured.size}, nonFeatured=${nonFeatured.size})")
             newFeatured + nonFeatured
         } catch (e: Exception) {
+            println("Exception in getTopStoriesByCategory: ${e.message}")
             existing
         }
     }
 
-    fun getAllStories(): List<NewsItem> =
-        newsOrder.mapNotNull { allNews[it] }
+    fun getAllStories(): List<NewsItem> {
+        println("getAllStories called, total stored=${newsOrder.size}")
+        return newsOrder.mapNotNull { allNews[it] }
+    }
 
     suspend fun getSimilarStories(uuid: String): List<NewsItem> {
-        if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+$"))) throw InvalidUUIDException()
-        similarNewsCache[uuid]?.let { return it }
-
-        val baseItem = allNews[uuid] ?: return emptyList()
-
+        println("getSimilarStories called with uuid=$uuid")
+        if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+$"))) {
+            println("InvalidUUIDException for uuid=$uuid")
+            throw InvalidUUIDException()
+        }
+        similarNewsCache[uuid]?.let {
+            println("Returning cached similar stories for uuid=$uuid, count=${it.size}")
+            return it
+        }
         return try {
-            val response = NewsAPI.service.getSimilarNews(
+            println("Making network request for similar stories, uuid=$uuid")
+            val response: NewsApiResponse = apiService.getSimilarNews(
                 uuid = uuid,
                 apiKey = apiKey,
                 language = "en",
-                publishedOn = baseItem.publishedDate.split("-").reversed().joinToString("-")
+                publishedOn = ""
             )
-
+            println("Similar response received: data.size=${response.data?.size ?: 0}")
             val result = response.data
-                .map { it.toNewsItem() }
-                .filter { it.uuid != uuid }
-                .take(2)
+                ?.map { it.toNewsItem() }
+                ?.filter { it.uuid != uuid }
+                ?.take(2)
+                ?: emptyList()
+            println("Mapped similar items, count=${result.size}")
 
-            result.forEach { insertOnTop(it) }
+            result.forEach {
+                println("  inserting similar item: uuid=${it.uuid}, title=${it.title}")
+                insertOnTop(it)
+            }
             similarNewsCache[uuid] = result
+            println("Returning similar stories for uuid=$uuid")
             result
         } catch (e: Exception) {
+            println("Exception in getSimilarStories: ${e.message}")
             emptyList()
         }
     }
 
-    private fun ApiNewsItem.toNewsItem(forcedCategory: String? = null): NewsItem =
-        NewsItem(
+    private fun ApiNewsItem.toNewsItem(forcedCategory: String? = null): NewsItem {
+        val chosenCategory = forcedCategory ?: (categories.firstOrNull() ?: "Ostalo")
+        println("toNewsItem: uuid=$uuid, chosenCategory=$chosenCategory, title=$title")
+        return NewsItem(
             uuid = uuid,
             title = title,
             snippet = description ?: "",
             imageUrl = image_url,
-            category = forcedCategory ?: (categories.firstOrNull() ?: "Ostalo"),
+            category = chosenCategory,
             isFeatured = false,
             source = source,
             publishedDate = published_at.take(10).split("-").reversed().joinToString("-"),
             imageTags = arrayListOf()
         )
+    }
 }

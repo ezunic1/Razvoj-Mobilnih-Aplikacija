@@ -10,7 +10,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.FilterData
-import etf.ri.rma.newsfeedapp.data.NewsDAO
+import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,15 +19,12 @@ import kotlin.coroutines.cancellation.CancellationException
 
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
     if (startMillis == null && endMillis == null) return true
-
     return try {
         val formatter = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault())
         formatter.timeZone = java.util.TimeZone.getTimeZone("UTC")
         val newsDateMillis = formatter.parse(publishedDate)?.time ?: return false
-
         val afterStart = startMillis?.let { newsDateMillis >= it } ?: true
         val beforeEnd = endMillis?.let { newsDateMillis <= it } ?: true
-
         afterStart && beforeEnd
     } catch (e: Exception) {
         false
@@ -37,10 +34,10 @@ fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: 
 @Composable
 fun NewsFeedScreen(
     navController: NavController,
-    filterData: FilterData
+    filterData: FilterData,
+    newsDAO: NewsDAO
 ) {
     var selectedCategoryLocal by remember(filterData.category) { mutableStateOf(filterData.category) }
-
     val categoryMap = mapOf(
         "Sve" to null,
         "Politika" to "politics",
@@ -48,7 +45,6 @@ fun NewsFeedScreen(
         "Nauka/tehnologija" to "science",
         "Ostalo" to "general"
     )
-
     val apiCategory = categoryMap[selectedCategoryLocal]
 
     val startMillis = remember(filterData.startDate) { parseDateToUTCEpochMillis(filterData.startDate) }
@@ -58,28 +54,22 @@ fun NewsFeedScreen(
     }
 
     val allNewsItems by produceState(initialValue = emptyList<NewsItem>(), selectedCategoryLocal) {
-        println("Fetching news for category: $selectedCategoryLocal (apiCategory=$apiCategory)")
         value = try {
-            withContext(Dispatchers.IO) {
-                if (apiCategory == null) {
-                    NewsDAO.getAllStories()
-                } else {
-                    NewsDAO.getTopStoriesByCategory(apiCategory).distinctBy { it.uuid }
-                }
+            if (apiCategory == null) {
+                newsDAO.getAllStories()
+            } else {
+                newsDAO.getTopStoriesByCategory(apiCategory).distinctBy { it.uuid }
             }
-        } catch (e: CancellationException) {
-            println("Cancelled: ${e.message}")
-            emptyList()
         } catch (e: Exception) {
-            println("Greška pri dohvaćanju vijesti: ${e.message}")
-            e.printStackTrace()
             emptyList()
         }
     }
 
     val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
         allNewsItems.filter { newsItem ->
-            val categoryMatch = selectedCategoryLocal == "Sve" || newsItem.category.equals(apiCategory, ignoreCase = true)
+            val categoryMatch =
+                selectedCategoryLocal == "Sve" ||
+                        newsItem.category.equals(apiCategory, ignoreCase = true)
             val dateMatch = isWithinSelectedRange(newsItem.publishedDate, startMillis, endMillis)
             val unwantedMatch = if (unwantedLower.isEmpty()) {
                 true
@@ -108,7 +98,9 @@ fun NewsFeedScreen(
                     onClick = { if (!isSelected) selectedCategoryLocal = category },
                     label = { Text(category) },
                     selected = isSelected,
-                    leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
+                    leadingIcon = if (isSelected) {
+                        { Icon(Icons.Filled.Done, "Done") }
+                    } else null,
                     modifier = Modifier.testTag(tag).weight(1f)
                 )
             }
@@ -129,7 +121,9 @@ fun NewsFeedScreen(
                     onClick = { if (!isSelected) selectedCategoryLocal = category },
                     label = { Text(category, maxLines = 1) },
                     selected = isSelected,
-                    leadingIcon = if (isSelected) { { Icon(Icons.Filled.Done, "Done") } } else null,
+                    leadingIcon = if (isSelected) {
+                        { Icon(Icons.Filled.Done, "Done") }
+                    } else null,
                     modifier = Modifier.testTag(tag).weight(1f)
                 )
             }
@@ -170,4 +164,3 @@ fun NewsFeedScreen(
         }
     }
 }
-

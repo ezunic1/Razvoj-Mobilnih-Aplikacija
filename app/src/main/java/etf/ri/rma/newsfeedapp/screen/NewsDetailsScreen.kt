@@ -9,14 +9,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import etf.ri.rma.newsfeedapp.data.FilterData
-import etf.ri.rma.newsfeedapp.data.ImageDAO
-import etf.ri.rma.newsfeedapp.data.NewsDAO
+import etf.ri.rma.newsfeedapp.data.network.ImageDAO
+import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
+import etf.ri.rma.newsfeedapp.model.R
 import java.net.URLEncoder
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -28,7 +31,7 @@ fun NewsDetailsScreen(
 ) {
     val similarNewsState = produceState(initialValue = emptyList<NewsItem>(), news.uuid) {
         value = try {
-            NewsDAO.getSimilarStories(news.uuid)
+            NewsDAO().getSimilarStories(news.uuid)
         } catch (e: Exception) {
             emptyList()
         }
@@ -79,7 +82,12 @@ fun NewsDetailsScreen(
             item {
                 if (!news.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
-                        model = news.imageUrl,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(news.imageUrl)
+                            .crossfade(true)
+                            .error(R.drawable.knjiga)     // fallback slika
+                            .placeholder(R.drawable.knjiga)
+                            .build(),
                         contentDescription = "Slika vijesti",
                         modifier = Modifier
                             .fillMaxWidth()
@@ -181,7 +189,7 @@ fun NewsDetailsScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(80.dp)) // ostavlja prostor iznad dugmeta
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
