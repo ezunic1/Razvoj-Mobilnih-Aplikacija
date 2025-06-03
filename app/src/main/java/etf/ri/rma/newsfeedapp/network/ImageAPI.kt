@@ -9,8 +9,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ImageAPI {
     private const val BASE_URL = "https://api.imagga.com/"
-    private const val API_KEY = "acc_bffcdb0fe107f8d"
-    private const val API_SECRET = "b68a9b4d3fe3ec399422b1add831c558"
+    private const val API_KEY = "acc_10900de1e336733"
+    private const val API_SECRET = "19310bce3a35fb06152773bc69a2eb42"
 
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()

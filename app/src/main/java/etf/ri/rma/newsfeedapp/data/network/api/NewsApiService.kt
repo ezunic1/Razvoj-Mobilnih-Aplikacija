@@ -6,6 +6,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface NewsApiService {
+
     @GET("news/top")
     suspend fun getTopNews(
         @Query("api_token") apiKey: String,
@@ -18,7 +19,7 @@ interface NewsApiService {
     suspend fun getSimilarNews(
         @Path("uuid") uuid: String,
         @Query("api_token") apiKey: String,
-        @Query("language") language: String,
-        @Query("published_on") publishedOn: String
+        @Query("language") language: String? = null,
+        @Query("published_on") publishedOn: String? = null
     ): NewsApiResponse
 }

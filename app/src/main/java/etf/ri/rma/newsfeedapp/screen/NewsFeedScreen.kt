@@ -15,7 +15,6 @@ import etf.ri.rma.newsfeedapp.model.NewsItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
-import kotlin.coroutines.cancellation.CancellationException
 
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
     if (startMillis == null && endMillis == null) return true
@@ -58,7 +57,7 @@ fun NewsFeedScreen(
             if (apiCategory == null) {
                 newsDAO.getAllStories()
             } else {
-                newsDAO.getTopStoriesByCategory(apiCategory).distinctBy { it.uuid }
+                newsDAO.getTopStoriesByCategory(apiCategory)
             }
         } catch (e: Exception) {
             emptyList()
@@ -95,7 +94,7 @@ fun NewsFeedScreen(
                     else -> ""
                 }
                 FilterChip(
-                    onClick = { if (!isSelected) selectedCategoryLocal = category },
+                    onClick = { selectedCategoryLocal = category },
                     label = { Text(category) },
                     selected = isSelected,
                     leadingIcon = if (isSelected) {
@@ -118,7 +117,7 @@ fun NewsFeedScreen(
                     else -> ""
                 }
                 FilterChip(
-                    onClick = { if (!isSelected) selectedCategoryLocal = category },
+                    onClick = { selectedCategoryLocal = category },
                     label = { Text(category, maxLines = 1) },
                     selected = isSelected,
                     leadingIcon = if (isSelected) {

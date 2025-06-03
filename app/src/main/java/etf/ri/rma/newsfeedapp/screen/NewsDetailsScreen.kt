@@ -1,5 +1,6 @@
 package etf.ri.rma.newsfeedapp.screen
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,8 @@ import etf.ri.rma.newsfeedapp.data.network.ImageDAO
 import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
+import etf.ri.rma.newsfeedapp.network.ImageAPI
+import etf.ri.rma.newsfeedapp.network.NewsAPI
 import java.net.URLEncoder
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -29,18 +32,23 @@ fun NewsDetailsScreen(
     navController: NavController,
     filters: FilterData
 ) {
-    val similarNewsState = produceState(initialValue = emptyList<NewsItem>(), news.uuid) {
-        value = try {
-            NewsDAO().getSimilarStories(news.uuid)
+    val similarNewsState = remember { mutableStateOf<List<NewsItem>>(emptyList()) }
+
+    LaunchedEffect(news.uuid) {
+        try {
+            similarNewsState.value = NewsDAO().getSimilarStories(news.uuid)
         } catch (e: Exception) {
-            emptyList()
+            similarNewsState.value = emptyList()
         }
     }
 
+
     val imageTags by produceState(initialValue = emptyList<String>(), news.imageUrl) {
+
         value = try {
             if (!news.imageUrl.isNullOrBlank()) {
-                ImageDAO().getTags(news.imageUrl)
+                ImageDAO().apply { setApiService(ImageAPI.service) }.getTags(news.imageUrl)//
+
             } else emptyList()
         } catch (e: Exception) {
             emptyList()
@@ -174,8 +182,6 @@ fun NewsDetailsScreen(
                 Text(
                     text = item.title,
                     modifier = Modifier
-                        .testTag("related_news_title_${index + 1}")
-                        .padding(vertical = 4.dp)
                         .clickable {
                             val route = "details/${item.uuid}?" +
                                     "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
@@ -183,10 +189,12 @@ fun NewsDetailsScreen(
                                     "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
                                     "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
                             navController.navigate(route)
-                        },
+                        }
+                        .padding(vertical = 4.dp),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
+
 
             item {
                 Spacer(modifier = Modifier.height(80.dp))
