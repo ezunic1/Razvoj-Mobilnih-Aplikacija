@@ -30,25 +30,23 @@ import java.net.URLEncoder
 fun NewsDetailsScreen(
     news: NewsItem,
     navController: NavController,
-    filters: FilterData
+    filters: FilterData,
+    newsDAO: NewsDAO
 ) {
     val similarNewsState = remember { mutableStateOf<List<NewsItem>>(emptyList()) }
 
     LaunchedEffect(news.uuid) {
         try {
-            similarNewsState.value = NewsDAO().getSimilarStories(news.uuid)
+            similarNewsState.value = newsDAO.getSimilarStories(news.uuid)
         } catch (e: Exception) {
             similarNewsState.value = emptyList()
         }
     }
 
-
     val imageTags by produceState(initialValue = emptyList<String>(), news.imageUrl) {
-
         value = try {
             if (!news.imageUrl.isNullOrBlank()) {
-                ImageDAO().apply { setApiService(ImageAPI.service) }.getTags(news.imageUrl)//
-
+                ImageDAO().apply { setApiService(ImageAPI.service) }.getTags(news.imageUrl)
             } else emptyList()
         } catch (e: Exception) {
             emptyList()
@@ -194,7 +192,6 @@ fun NewsDetailsScreen(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-
 
             item {
                 Spacer(modifier = Modifier.height(80.dp))

@@ -12,8 +12,6 @@ import androidx.navigation.NavController
 import etf.ri.rma.newsfeedapp.data.FilterData
 import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
@@ -41,7 +39,8 @@ fun NewsFeedScreen(
         "Sve" to null,
         "Politika" to "politics",
         "Sport" to "sports",
-        "Nauka/tehnologija" to "science",
+        "Nauka" to "science",
+        "Tehnologija" to "tech",
         "Ostalo" to "general"
     )
     val apiCategory = categoryMap[selectedCategoryLocal]
@@ -109,10 +108,11 @@ fun NewsFeedScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("Nauka/tehnologija", "Ostalo").forEach { category ->
+            listOf("Nauka", "Tehnologija", "Ostalo").forEach { category ->
                 val isSelected = selectedCategoryLocal == category
                 val tag = when (category) {
-                    "Nauka/tehnologija" -> "filter_chip_sci"
+                    "Nauka" -> "filter_chip_nauka"
+                    "Tehnologija" -> "filter_chip_tech"
                     "Ostalo" -> "filter_chip_none"
                     else -> ""
                 }

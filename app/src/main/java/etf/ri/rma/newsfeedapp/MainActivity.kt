@@ -9,7 +9,6 @@ import etf.ri.rma.newsfeedapp.navigation.NewsFeedNavGraph
 
 class MainActivity : ComponentActivity() {
 
-
     private val newsDAO = NewsDAO()
 
     override fun onCreate(savedInstanceState: Bundle?) {

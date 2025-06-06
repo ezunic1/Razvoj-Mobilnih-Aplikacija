@@ -82,7 +82,8 @@ fun NewsFeedNavGraph(newsDAO: NewsDAO) {
                 NewsDetailsScreen(
                     news = newsState!!,
                     navController = navController,
-                    filters = filterData
+                    filters = filterData,
+                    newsDAO = newsDAO
                 )
             } else {
                 Text("Vijest nije pronađena")

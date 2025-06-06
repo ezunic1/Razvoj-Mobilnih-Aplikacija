@@ -187,10 +187,13 @@ class NewsDAO {
 
         if (now - lastFetched < 30_000 && existing.isNotEmpty()) {
             val featuredIds = featuredCache[category].orEmpty()
-            return existing.map {
-                it.copy(isFeatured = it.uuid in featuredIds)
-            }
+            val featuredNews = existing.filter { it.uuid in featuredIds }
+                .map { it.copy(isFeatured = true) }
+            val standardNews = existing.filterNot { it.uuid in featuredIds }
+                .map { it.copy(isFeatured = false) }
+            return featuredNews + standardNews
         }
+
 
         return try {
             val response: NewsApiResponse =
@@ -228,8 +231,6 @@ class NewsDAO {
         return newsOrder.mapNotNull { allNews[it] }
     }
 
-
-
     suspend fun getSimilarStories(uuid: String): List<NewsItem> {
 
         if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+$"))) {
@@ -248,7 +249,6 @@ class NewsDAO {
                 publishedOn = null
             )
 
-
             val result = response.data
                 ?.map { it.toNewsItem() }
                 ?.filter { it.uuid != uuid }
@@ -256,13 +256,16 @@ class NewsDAO {
                 ?: emptyList()
 
             result.forEach {
-                insertOnTop(it)
+                if (!allNews.containsKey(it.uuid)) {
+                    insertOnTop(it)
+                    Log.d("NewsDAO", "Inserted:: ${it.uuid} ${it.category}")
+                }
             }
+
 
             similarNewsCache[uuid] = result
             return result
         } catch (e: Exception) {
-
             return emptyList()
         }
     }

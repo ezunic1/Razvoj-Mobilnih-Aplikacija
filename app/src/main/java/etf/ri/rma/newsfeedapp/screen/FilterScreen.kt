@@ -70,7 +70,6 @@ fun FilterScreen(
         mutableStateOf(initialFilter.unwantedWords.toMutableSet())
     }
 
-
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             item {
@@ -103,7 +102,7 @@ fun FilterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("Nauka/tehnologija", "Ostalo").forEach { category ->
+                    listOf("Nauka", "Tehnologija").forEach { category ->
                         val selected = selectedCategory == category
                         FilterChip(
                             onClick = { if (!selected) selectedCategory = category },
@@ -112,8 +111,8 @@ fun FilterScreen(
                             leadingIcon = if (selected) { { Icon(Icons.Filled.Done, "Done") } } else null,
                             modifier = Modifier.testTag(
                                 when (category) {
-                                    "Nauka/tehnologija" -> "filter_chip_sci"
-                                    "Ostalo" -> "filter_chip_none"
+                                    "Nauka" -> "filter_chip_nauka"
+                                    "Tehnologija" -> "filter_chip_tech"
                                     else -> ""
                                 }
                             ).weight(1f)
@@ -256,7 +255,6 @@ fun FilterScreen(
                 }
             }
         }
-
         Button(
             onClick = {
                 val filterData = FilterData(
