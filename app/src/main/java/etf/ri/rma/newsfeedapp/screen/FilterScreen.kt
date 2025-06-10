@@ -1,5 +1,6 @@
 package etf.ri.rma.newsfeedapp.screen
 
+// Potrebni importi za Compose komponente, stanje i navigaciju
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -48,23 +49,31 @@ fun FilterScreen(
     navController: NavController,
     initialFilter: FilterData,
 ) {
+    // Čuvam trenutno izabranu kategoriju
     var selectedCategory by remember { mutableStateOf(initialFilter.category) }
 
+    // Stanje za prikaz date pickera
     var showDatePickerDialog by remember { mutableStateOf(false) }
+
+    // Inicijalno selektovani datumi uzeti iz početnog filtera
     val dateRangePickerState = rememberDateRangePickerState(
         initialSelectedStartDateMillis = parseDateToUTCEpochMillis(initialFilter.startDate),
         initialSelectedEndDateMillis = parseDateToUTCEpochMillis(initialFilter.endDate)
     )
+
     val selectedStartDate = dateRangePickerState.selectedStartDateMillis
     val selectedEndDate = dateRangePickerState.selectedEndDateMillis
     val formattedStartDate = formatMillisDate(selectedStartDate)
     val formattedEndDate = formatMillisDate(selectedEndDate)
+
+    // Tekst koji prikazujem u UI-ju kad je izabran opseg datuma
     val dateRangeDisplay = when {
         formattedStartDate.isNotEmpty() && formattedEndDate.isNotEmpty() -> "$formattedStartDate;$formattedEndDate"
         formattedStartDate.isNotEmpty() -> "$formattedStartDate;..."
         else -> "Odaberite opseg datuma"
     }
 
+    // Unos i prikaz nepoželjnih riječi
     var unwantedWordInput by remember { mutableStateOf("") }
     val unwantedWordsSet = remember {
         mutableStateOf(initialFilter.unwantedWords.toMutableSet())
@@ -73,10 +82,8 @@ fun FilterScreen(
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         LazyColumn(modifier = Modifier.weight(1f)) {
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                // Prva linija kategorija
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Sve", "Politika", "Sport").forEach { category ->
                         val selected = selectedCategory == category
                         FilterChip(
@@ -84,24 +91,24 @@ fun FilterScreen(
                             label = { Text(category) },
                             selected = selected,
                             leadingIcon = if (selected) { { Icon(Icons.Filled.Done, "Done") } } else null,
-                            modifier = Modifier.testTag(
-                                when (category) {
-                                    "Sve" -> "filter_chip_all"
-                                    "Politika" -> "filter_chip_pol"
-                                    "Sport" -> "filter_chip_spo"
-                                    else -> ""
-                                }
-                            ).weight(1f)
+                            modifier = Modifier
+                                .testTag(
+                                    when (category) {
+                                        "Sve" -> "filter_chip_all"
+                                        "Politika" -> "filter_chip_pol"
+                                        "Sport" -> "filter_chip_spo"
+                                        else -> ""
+                                    }
+                                )
+                                .weight(1f)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                // Druga linija kategorija
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Nauka", "Tehnologija").forEach { category ->
                         val selected = selectedCategory == category
                         FilterChip(
@@ -109,13 +116,15 @@ fun FilterScreen(
                             label = { Text(category, maxLines = 1) },
                             selected = selected,
                             leadingIcon = if (selected) { { Icon(Icons.Filled.Done, "Done") } } else null,
-                            modifier = Modifier.testTag(
-                                when (category) {
-                                    "Nauka" -> "filter_chip_nauka"
-                                    "Tehnologija" -> "filter_chip_tech"
-                                    else -> ""
-                                }
-                            ).weight(1f)
+                            modifier = Modifier
+                                .testTag(
+                                    when (category) {
+                                        "Nauka" -> "filter_chip_nauka"
+                                        "Tehnologija" -> "filter_chip_tech"
+                                        else -> ""
+                                    }
+                                )
+                                .weight(1f)
                         )
                     }
                 }
@@ -124,6 +133,7 @@ fun FilterScreen(
             }
 
             item {
+                // Prikaz i otvaranje date picker-a
                 Text("Datum objave", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -146,10 +156,12 @@ fun FilterScreen(
                         Icon(Icons.Filled.DateRange, contentDescription = "Odaberi datum")
                     }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
             item {
+                // Sekcija za unos i prikaz nepoželjnih riječi
                 Text("Nepoželjne riječi", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -182,6 +194,7 @@ fun FilterScreen(
                         Icon(Icons.Filled.Add, contentDescription = "Dodaj riječ")
                     }
                 }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 FlowRow(
@@ -217,6 +230,7 @@ fun FilterScreen(
             }
         }
 
+        // Dijalog za izbor datuma
         if (showDatePickerDialog) {
             Dialog(onDismissRequest = { showDatePickerDialog = false }) {
                 Surface(
@@ -224,10 +238,7 @@ fun FilterScreen(
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background),
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
+                    Column(modifier = Modifier.fillMaxSize()) {
                         DateRangePicker(
                             state = dateRangePickerState,
                             modifier = Modifier
@@ -241,20 +252,16 @@ fun FilterScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            TextButton(onClick = { showDatePickerDialog = false }) {
-                                Text("Otkaži")
-                            }
+                            TextButton(onClick = { showDatePickerDialog = false }) { Text("Otkaži") }
                             Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = {
-                                showDatePickerDialog = false
-                            }) {
-                                Text("Potvrdi")
-                            }
+                            TextButton(onClick = { showDatePickerDialog = false }) { Text("Potvrdi") }
                         }
                     }
                 }
             }
         }
+
+        // Dugme "Primijeni filtere" vodi nazad na home sa novim parametrima
         Button(
             onClick = {
                 val filterData = FilterData(
@@ -276,7 +283,6 @@ fun FilterScreen(
                     launchSingleTop = true
                 }
             },
-
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp, bottom = 8.dp)
@@ -286,6 +292,7 @@ fun FilterScreen(
         }
     }
 
+    // Ako korisnik klikne back, vraćam se na home sa prethodnim filterom
     BackHandler {
         val encodedCategory = URLEncoder.encode(initialFilter.category, StandardCharsets.UTF_8.toString())
         val encodedStartDate = URLEncoder.encode(initialFilter.startDate ?: "", StandardCharsets.UTF_8.toString())
@@ -298,5 +305,4 @@ fun FilterScreen(
             popUpTo("home") { inclusive = true }
         }
     }
-
 }

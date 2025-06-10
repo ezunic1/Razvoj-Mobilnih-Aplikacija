@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -23,18 +24,24 @@ import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
 import etf.ri.rma.newsfeedapp.network.ImageAPI
 import etf.ri.rma.newsfeedapp.network.NewsAPI
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NewsDetailsScreen(
-    news: NewsItem,
-    navController: NavController,
-    filters: FilterData,
-    newsDAO: NewsDAO
+    news: NewsItem, // Primljena vijest za prikaz
+    navController: NavController, // Navigacija
+    filters: FilterData, // Filteri koji su bili aktivni
+    newsDAO: NewsDAO // DAO za dohvat sličnih vijesti
 ) {
     val similarNewsState = remember { mutableStateOf<List<NewsItem>>(emptyList()) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var loadingNext by remember { mutableStateOf(false) }
 
+    // Dohvati slične vijesti kada se promijeni UUID
     LaunchedEffect(news.uuid) {
         try {
             similarNewsState.value = newsDAO.getSimilarStories(news.uuid)
@@ -43,6 +50,7 @@ fun NewsDetailsScreen(
         }
     }
 
+    // Dohvati tagove slike (ako postoji URL slike)
     val imageTags by produceState(initialValue = emptyList<String>(), news.imageUrl) {
         value = try {
             if (!news.imageUrl.isNullOrBlank()) {
@@ -59,6 +67,7 @@ fun NewsDetailsScreen(
         bottomBar = {
             Button(
                 onClick = {
+                    // Vrati se nazad na početni ekran s istim filterima
                     val route = "home?" +
                             "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
                             "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
@@ -75,6 +84,11 @@ fun NewsDetailsScreen(
             ) {
                 Text("Zatvori detalje")
             }
+
+            Spacer(modifier = Modifier.height(80.dp))
+
+
+
         }
     ) { padding ->
         LazyColumn(
@@ -85,13 +99,14 @@ fun NewsDetailsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Slika vijesti (ako postoji)
             item {
                 if (!news.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(news.imageUrl)
                             .crossfade(true)
-                            .error(R.drawable.knjiga)     // fallback slika
+                            .error(R.drawable.knjiga)
                             .placeholder(R.drawable.knjiga)
                             .build(),
                         contentDescription = "Slika vijesti",
@@ -103,6 +118,7 @@ fun NewsDetailsScreen(
                 }
             }
 
+            // Naslov, opis, izvor i datum objave
             item {
                 Text(
                     text = news.title,
@@ -145,6 +161,7 @@ fun NewsDetailsScreen(
                 )
             }
 
+            // Prikaz tagova slike ako ih ima
             if (imageTags.isNotEmpty()) {
                 item {
                     Text(
@@ -169,6 +186,7 @@ fun NewsDetailsScreen(
                 }
             }
 
+            // Slične vijesti iz iste kategorije
             item {
                 Text(
                     text = "Povezane vijesti iz iste kategorije",
@@ -193,12 +211,67 @@ fun NewsDetailsScreen(
                 )
             }
 
+            // Donji razmak ispod zadnjeg elementa
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
+            item{
+                Button(
+                    onClick = {
+                        loadingNext = true
+                        coroutineScope.launch {
+                            val url = newsDAO.getSimilarWithSource(news.uuid, news.source)
+                            loadingNext = false
+                            url?.let {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, it.toUri())
+                                context.startActivity(intent)
+                            }
+                        }
+                    },
+                    enabled = !loadingNext,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .testTag("details_next_button")
+                ) {
+                    Text(if (loadingNext) "Učitavanje..." else "Otvori sljedeću")
+                }
+            }
+
+
+
+
+            /*val headlinesBySource = remember { mutableStateOf<List<String>>(emptyList()) }
+
+            LaunchedEffect(news.source) {
+                try {
+                    headlinesBySource.value = newsDAO.getHeadlinesBySource(news.source)
+                } catch (e: Exception) {
+                    headlinesBySource.value = emptyList()
+                }
+            }*/
+
+            //
+            /*item {
+                Text(
+                    text = "Vijesti iz istog izvora: ${news.source}",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            itemsIndexed(headlinesBySource.value) { index, title ->
+                Text(
+                    text = title,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }*/
+            //
+
         }
     }
 
+    // Hardverski back handler - identično ponašanje kao na "zatvori"
     BackHandler {
         val route = "home?" +
                 "category=${URLEncoder.encode(filters.category, "UTF-8")}" +

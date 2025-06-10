@@ -14,6 +14,7 @@ import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import java.net.URLEncoder
 
+// Provjerava da li je datum objave unutar selektovanog vremenskog opsega
 fun isWithinSelectedRange(publishedDate: String, startMillis: Long?, endMillis: Long?): Boolean {
     if (startMillis == null && endMillis == null) return true
     return try {
@@ -34,7 +35,10 @@ fun NewsFeedScreen(
     filterData: FilterData,
     newsDAO: NewsDAO
 ) {
+    // Interno selektovana kategorija
     var selectedCategoryLocal by remember(filterData.category) { mutableStateOf(filterData.category) }
+
+    // Mapa kategorija iz prikaza u API ključ
     val categoryMap = mapOf(
         "Sve" to null,
         "Politika" to "politics",
@@ -45,12 +49,14 @@ fun NewsFeedScreen(
     )
     val apiCategory = categoryMap[selectedCategoryLocal]
 
+    // Parsiranje početnog i krajnjeg datuma
     val startMillis = remember(filterData.startDate) { parseDateToUTCEpochMillis(filterData.startDate) }
     val endMillis = remember(filterData.endDate) { parseDateToUTCEpochMillis(filterData.endDate) }
     val unwantedLower = remember(filterData.unwantedWords) {
         filterData.unwantedWords.map { it.lowercase() }.toSet()
     }
 
+    // Dohvata sve vijesti iz API-ja ili cache-a na osnovu kategorije
     val allNewsItems by produceState(initialValue = emptyList<NewsItem>(), selectedCategoryLocal) {
         value = try {
             if (apiCategory == null) {
@@ -63,6 +69,7 @@ fun NewsFeedScreen(
         }
     }
 
+    // Filtrira vijesti po kategoriji, datumu i neželjenim riječima
     val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
         allNewsItems.filter { newsItem ->
             val categoryMatch =
@@ -79,7 +86,9 @@ fun NewsFeedScreen(
         }
     }
 
+    // Glavni UI layout
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Prva linija kategorija
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -104,6 +113,7 @@ fun NewsFeedScreen(
             }
         }
 
+        // Druga linija kategorija
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -128,6 +138,7 @@ fun NewsFeedScreen(
             }
         }
 
+        // Dugme za dodatne filtere
         FilterChip(
             onClick = {
                 val updatedFilter = FilterData(
@@ -151,9 +162,11 @@ fun NewsFeedScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Prikaz poruke ako nema vijesti
         if (filteredNews.isEmpty()) {
             MessageCard("Nema pronađenih vijesti u kategoriji $selectedCategoryLocal")
         } else {
+            // Inače, prikaži listu vijesti
             val updatedFilter = filterData.copy(category = selectedCategoryLocal)
             NewsList(
                 newsList = filteredNews,

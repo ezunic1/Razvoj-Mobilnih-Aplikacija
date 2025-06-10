@@ -4,7 +4,7 @@ import etf.ri.rma.newsfeedapp.model.NewsItem
 
 object NewsData {
 
-    fun getAllNews(): List<NewsItem> {
+    /*fun getAllNews(): List<NewsItem> {
         return listOf(
             NewsItem("1", "Novi zakon o radu usvojen u Skupštini", "Zakon donosi brojne izmjene koje se tiču radnog vremena i prava radnika.", null, "Politika", true, "ReformNews", "03-03-2025", arrayListOf()),
             NewsItem("2", "Povećanje minimalne plate u FBiH", "Nakon višemjesečnih pregovora, postignut je dogovor.", null, "Politika", true, "EkoTV", "02-04-2025", arrayListOf()),
@@ -27,7 +27,7 @@ object NewsData {
             NewsItem("19", "Mladi programeri iz Sarajeva kreiraju novu edukativnu igru", "Igra će biti besplatna za sve osnovne škole.", null, "Nauka/tehnologija", false, "EdTechSource", "25-03-2025", arrayListOf()),
             NewsItem("20", "BiH tim ide na svjetsku olimpijadu iz informatike", "Nakon odličnih rezultata na regionalnom takmičenju.", null, "Nauka/tehnologija", true, "OlympiadNews", "24-03-2024", arrayListOf())
         )
-    }
+    }*/
 
 
 }

@@ -11,11 +11,11 @@ import java.util.*
 
 class NewsDAO {
 
-    private val allNews = LinkedHashMap<String, NewsItem>()
-    private val newsOrder = mutableListOf<String>()
-    private val categoryTimestamps = mutableMapOf<String, Long>()
-    private val featuredCache = mutableMapOf<String, List<String>>()
-    private val similarNewsCache = mutableMapOf<String, List<NewsItem>>()
+    private val allNews = LinkedHashMap<String, NewsItem>() // Čuvam sve vijesti po uuid-u
+    private val newsOrder = mutableListOf<String>() // Redoslijed prikaza vijesti
+    private val categoryTimestamps = mutableMapOf<String, Long>() // Kada je koja kategorija zadnji put dohvaćena
+    private val featuredCache = mutableMapOf<String, List<String>>() // UUID-ovi vijesti koje su featured
+    private val similarNewsCache = mutableMapOf<String, List<NewsItem>>() // Keširane slične vijesti
 
     private var apiService: NewsApiService
     private var apiKey: String
@@ -159,15 +159,18 @@ class NewsDAO {
             )
         )
         initialNews.forEach { insertOnTop(it) }
+
+
     }
 
     private fun insertOnTop(item: NewsItem) {
         allNews[item.uuid] = item
         newsOrder.remove(item.uuid)
-        newsOrder.add(0, item.uuid)
+        newsOrder.add(0, item.uuid) // Dodajem vijest na početak liste
     }
 
     fun setApiService(service: NewsApiService) {
+        // Resetujem sve kad postavljam novi API servis
         allNews.clear()
         newsOrder.clear()
         categoryTimestamps.clear()
@@ -177,7 +180,7 @@ class NewsDAO {
     }
 
     fun setApiKey(token: String) {
-        apiKey = token
+        apiKey = token // Omogućavam promjenu API ključa
     }
 
     suspend fun getTopStoriesByCategory(category: String, limit: Int = 3): List<NewsItem> {
@@ -186,6 +189,7 @@ class NewsDAO {
         val existing = allNews.values.filter { it.category.equals(category, ignoreCase = true) }
 
         if (now - lastFetched < 30_000 && existing.isNotEmpty()) {
+            // Ako je poziv urađen unutar 30 sekundi, vraćam postojeće vijesti
             val featuredIds = featuredCache[category].orEmpty()
             val featuredNews = existing.filter { it.uuid in featuredIds }
                 .map { it.copy(isFeatured = true) }
@@ -194,17 +198,14 @@ class NewsDAO {
             return featuredNews + standardNews
         }
 
-
         return try {
-            val response: NewsApiResponse =
-                apiService.getTopNews(apiKey = apiKey, locale = locale, category = category, limit = limit)
-            val newItems: List<NewsItem> = response.data?.map { it.toNewsItem(forcedCategory = category) }
-                ?: emptyList()
-
+            // Dohvaćam vijesti sa web servisa
+            val response: NewsApiResponse = apiService.getTopNews(apiKey, locale, category, limit) /// OVO je bitno, ovako i za ostale linkove
+            val newItems = response.data?.map { it.toNewsItem(forcedCategory = category) } ?: emptyList()
             val newFeatured = mutableListOf<NewsItem>()
             for (item in newItems) {
                 val prepared = item.copy(isFeatured = true)
-                insertOnTop(prepared)
+                insertOnTop(prepared) // Ubacujem nove vijesti kao featured
                 newFeatured.add(prepared)
             }
 
@@ -217,61 +218,50 @@ class NewsDAO {
                     it.category.equals(category, ignoreCase = true) &&
                             it.uuid !in featuredCache[category].orEmpty()
                 }
-                .map {
-                    it.copy(isFeatured = false)
-                }
+                .map { it.copy(isFeatured = false) }
 
-            newFeatured + nonFeatured
+            newFeatured + nonFeatured // Vraćam nove featured + stare kao obične vijesti
         } catch (e: Exception) {
-            existing
+            existing // Ako poziv ne uspije, vraćam prethodne vijesti
         }
     }
 
     fun getAllStories(): List<NewsItem> {
-        return newsOrder.mapNotNull { allNews[it] }
+        return newsOrder.mapNotNull { allNews[it] } // Vraćam sve vijesti redoslijedom ubacivanja
     }
 
     suspend fun getSimilarStories(uuid: String): List<NewsItem> {
-
-        if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+$"))) {
-            throw InvalidUUIDException()
+        if (!uuid.matches(Regex("^[a-fA-F0-9\\-]{36}|uuid-[0-9]+\$"))) {
+            throw InvalidUUIDException() // Validiram uuid
         }
 
         similarNewsCache[uuid]?.let {
-            return it
+            return it // Ako sam već dohvaćao, koristim keširane slične vijesti
         }
 
         return try {
-            val response: NewsApiResponse = apiService.getSimilarNews(
-                uuid = uuid,
-                apiKey = apiKey,
-                language = "en",
-                publishedOn = null
-            )
-
+            val response = apiService.getSimilarNews(uuid, apiKey, "en")
             val result = response.data
                 ?.map { it.toNewsItem() }
                 ?.filter { it.uuid != uuid }
-                ?.take(2)
-                ?: emptyList()
+                ?.take(2) ?: emptyList()
 
             result.forEach {
                 if (!allNews.containsKey(it.uuid)) {
-                    insertOnTop(it)
+                    insertOnTop(it) // Ubacujem slične vijesti ako ih već nemam
                     Log.d("NewsDAO", "Inserted:: ${it.uuid} ${it.category}")
                 }
             }
 
-
             similarNewsCache[uuid] = result
-            return result
+            result
         } catch (e: Exception) {
-            return emptyList()
+            emptyList() // Ako poziv ne uspije, vraćam praznu listu
         }
     }
 
-
     private fun ApiNewsItem.toNewsItem(forcedCategory: String? = null): NewsItem {
+        // Pretvaram API model u aplikacijski model
         val chosenCategory = forcedCategory ?: (categories.firstOrNull() ?: "Ostalo")
         return NewsItem(
             uuid = uuid,
@@ -285,4 +275,49 @@ class NewsDAO {
             imageTags = arrayListOf()
         )
     }
+
+    /*suspend fun getSimilarWithSource(uuidnews: String, sourceId: String): List<String> {
+        return try {
+            val response = apiService.getSimilarWithSource(apiKey, uuidnews, sourceId)
+            response.data?.mapNotNull { it.title } ?: emptyList()
+        } catch (e: Exception) {
+            Log.e("NewsDAO", "Greška prilikom dohvatanja naslova po izvoru: $e")
+            emptyList()
+        }
+    }*/
+
+    suspend fun getSimilarWithSource(uuidNews: String, source: String): String? {
+        /*return try {
+            val response = apiService.getSimilarWithSource(
+                uuid = uuidNews,
+                apiKey = apiKey,
+                language = "en",
+                limit = 5
+            )
+            response.data
+                ?.firstOrNull { it.source == source }
+                ?.url
+                ?: run {
+                    Log.e("NewsDAO", "No similar news from the same source")
+                    null
+                }
+        } catch (e: Exception) {
+            Log.e("NewsDAO", "Error fetching similar news: $e")
+            null
+        }*/
+
+        try {
+            UUID.fromString(uuidNews)
+        }catch (e: IllegalArgumentException) {
+            throw InvalidUUIDException()
+        }
+        val response = apiService.getSimilarWithSource(
+            uuid = uuidNews,
+            apiKey = apiKey,
+            limit = 5
+        )
+        val similar = response.data?.firstOrNull { it.source == source }
+        return similar?.url
+    }
+
 }

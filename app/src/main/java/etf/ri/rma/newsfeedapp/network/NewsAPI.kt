@@ -12,6 +12,6 @@ object NewsAPI {
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(NewsApiService::class.java)
+            .create(NewsApiService::class.java) // Retrofit servis za dohvat vijesti
     }
 }

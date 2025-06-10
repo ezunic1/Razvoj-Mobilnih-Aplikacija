@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun NewsFeedNavGraph(newsDAO: NewsDAO) {
-    val navController = rememberNavController()
+    val navController = rememberNavController() // Pamtim navigator
 
     NavHost(navController = navController, startDestination = "home") {
         composable(
@@ -31,6 +31,7 @@ fun NewsFeedNavGraph(newsDAO: NewsDAO) {
                 navArgument("unwanted") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
+            // Parsiram filter podatke iz URL-a
             val category = backStackEntry.arguments?.getString("category") ?: "Sve"
             val startDate = backStackEntry.arguments?.getString("startDate")
             val endDate = backStackEntry.arguments?.getString("endDate")
@@ -61,6 +62,7 @@ fun NewsFeedNavGraph(newsDAO: NewsDAO) {
                 navArgument("unwanted") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
+            // Dohvatam sve parametre i filtriram vijest po ID-u
             val id = backStackEntry.arguments?.getString("id") ?: return@composable
             val category = backStackEntry.arguments?.getString("category") ?: "Sve"
             val startDate = backStackEntry.arguments?.getString("startDate")
@@ -99,6 +101,7 @@ fun NewsFeedNavGraph(newsDAO: NewsDAO) {
                 navArgument("unwanted") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
+            // Podesavam filtere za FilterScreen
             val category = backStackEntry.arguments?.getString("category") ?: "Sve"
             val startDate = backStackEntry.arguments?.getString("startDate")
             val endDate = backStackEntry.arguments?.getString("endDate")

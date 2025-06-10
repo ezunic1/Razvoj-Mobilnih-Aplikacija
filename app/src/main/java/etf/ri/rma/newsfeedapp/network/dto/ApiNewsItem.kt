@@ -3,6 +3,7 @@ data class ApiNewsItem(
     val uuid: String,
     val title: String,
     val description: String = "",
+    val url: String,
     val image_url: String? = null,
     val categories: List<String> = emptyList(),
     val source: String = "",

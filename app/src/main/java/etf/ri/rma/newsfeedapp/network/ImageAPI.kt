@@ -13,6 +13,7 @@ object ImageAPI {
     private const val API_SECRET = "19310bce3a35fb06152773bc69a2eb42"
 
     private val authInterceptor = Interceptor { chain ->
+        // Dodajem Basic Authentication header
         val request = chain.request().newBuilder()
             .addHeader("Authorization", Credentials.basic(API_KEY, API_SECRET))
             .build()
@@ -20,7 +21,7 @@ object ImageAPI {
     }
 
     private val client = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
+        .addInterceptor(authInterceptor) // Klijent koji koristi moj interceptor
         .build()
 
     val service: ImageApiService by lazy {
@@ -29,6 +30,6 @@ object ImageAPI {
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(ImageApiService::class.java)
+            .create(ImageApiService::class.java) // Kreiram Retrofit servis
     }
 }
