@@ -34,7 +34,12 @@ fun NewsFeedScreen(
     filterData: FilterData,
     newsDAO: NewsDAO
 ) {
+    LaunchedEffect(Unit) {
+        newsDAO.preloadNewsFromDb()
+    }
+
     var selectedCategoryLocal by remember(filterData.category) { mutableStateOf(filterData.category) }
+
     val categoryMap = mapOf(
         "Sve" to null,
         "Politika" to "politics",
@@ -54,20 +59,22 @@ fun NewsFeedScreen(
     val allNewsItems by produceState(initialValue = emptyList<NewsItem>(), selectedCategoryLocal) {
         value = try {
             if (apiCategory == null) {
-                newsDAO.getAllStories()
-            } else {
-                newsDAO.getTopStoriesByCategory(apiCategory)
+                newsDAO.getAllNewsFromDb()
+            }
+            else {
+                val fromMemory = newsDAO.getTopStoriesByCategory(apiCategory)
+                if (fromMemory.isNotEmpty()) fromMemory else newsDAO.getNewsFromDbByCategory(apiCategory)
             }
         } catch (e: Exception) {
-            emptyList()
+            if (apiCategory == null) newsDAO.getAllNewsFromDb()
+            else newsDAO.getNewsFromDbByCategory(apiCategory)
         }
     }
 
     val filteredNews = remember(selectedCategoryLocal, startMillis, endMillis, unwantedLower, allNewsItems) {
         allNewsItems.filter { newsItem ->
-            val categoryMatch =
-                selectedCategoryLocal == "Sve" ||
-                        newsItem.category.equals(apiCategory, ignoreCase = true)
+            val categoryMatch = selectedCategoryLocal == "Sve" ||
+                    newsItem.category.equals(apiCategory, ignoreCase = true)
             val dateMatch = isWithinSelectedRange(newsItem.publishedDate, startMillis, endMillis)
             val unwantedMatch = if (unwantedLower.isEmpty()) {
                 true

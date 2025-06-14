@@ -1,8 +1,12 @@
 package etf.ri.rma.newsfeedapp.model
 
-import androidx.room.Ignore
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-data class NewsItem(
+@Entity(tableName = "News")
+data class NewsEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val uuid: String,
     val title: String,
     val snippet: String,
@@ -10,7 +14,5 @@ data class NewsItem(
     val category: String,
     val isFeatured: Boolean,
     val source: String,
-    val publishedDate: String,
-    @Ignore
-    val imageTags: ArrayList<String> = arrayListOf()
+    val publishedDate: String
 )

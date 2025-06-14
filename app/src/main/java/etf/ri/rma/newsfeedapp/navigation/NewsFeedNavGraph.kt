@@ -74,20 +74,12 @@ fun NewsFeedNavGraph(newsDAO: NewsDAO) {
                 unwantedWords = unwanted
             )
 
-            val newsState by produceState(initialValue = null as etf.ri.rma.newsfeedapp.model.NewsItem?, id) {
-                value = newsDAO.getAllStories().firstOrNull { it.uuid == id }
-            }
-
-            if (newsState != null) {
-                NewsDetailsScreen(
-                    news = newsState!!,
-                    navController = navController,
-                    filters = filterData,
-                    newsDAO = newsDAO
-                )
-            } else {
-                Text("Vijest nije pronađena")
-            }
+            NewsDetailsScreen(
+                uuid = id,
+                navController = navController,
+                filters = filterData,
+                newsDAO = newsDAO
+            )
         }
 
         composable(

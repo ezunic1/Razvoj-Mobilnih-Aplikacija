@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -73,4 +74,17 @@ dependencies {
 
     androidTestImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation(kotlin("test"))
+
+    // Room biblioteka
+    implementation("androidx.room:room-runtime:2.6.1")
+
+// Ako koristiš KSP (preporučeno za Room u novim projektima)
+    ksp("androidx.room:room-compiler:2.6.1")
+
+// Ako koristiš stariji annotationProcessor umjesto KSP (nije potrebno ako koristiš ksp)
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
+
+    implementation("androidx.room:room-ktx:2.6.1")
+
+
 }

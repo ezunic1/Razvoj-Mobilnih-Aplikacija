@@ -22,38 +22,53 @@ import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
 import etf.ri.rma.newsfeedapp.network.ImageAPI
-import etf.ri.rma.newsfeedapp.network.NewsAPI
+import kotlinx.coroutines.isActive
 import java.net.URLEncoder
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NewsDetailsScreen(
-    news: NewsItem,
+    uuid: String,
     navController: NavController,
     filters: FilterData,
     newsDAO: NewsDAO
 ) {
+    var news by remember { mutableStateOf<NewsItem?>(null) }
     val similarNewsState = remember { mutableStateOf<List<NewsItem>>(emptyList()) }
-
-    LaunchedEffect(news.uuid) {
-        try {
-            similarNewsState.value = newsDAO.getSimilarStories(news.uuid)
-        } catch (e: Exception) {
-            similarNewsState.value = emptyList()
-        }
-    }
-
-    val imageTags by produceState(initialValue = emptyList<String>(), news.imageUrl) {
-        value = try {
-            if (!news.imageUrl.isNullOrBlank()) {
-                ImageDAO().apply { setApiService(ImageAPI.service) }.getTags(news.imageUrl)
-            } else emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
     val listState = rememberLazyListState()
+
+    LaunchedEffect(uuid) {
+        val allNews = newsDAO.getAllStories()
+        news = allNews.find { it.uuid == uuid }
+        news?.let {
+            similarNewsState.value = newsDAO.getSimilarStories(it.uuid)
+        }
+    }
+
+    // Dohvati image tagove nakon što imamo URL
+    LaunchedEffect(news?.imageUrl) {
+        if (!news?.imageUrl.isNullOrEmpty() && news!!.imageTags.isEmpty()) {
+            try {
+                val tags = ImageDAO().apply { setApiService(ImageAPI.service) }
+                    .getTags(news!!.imageUrl!!)
+                news!!.imageTags.addAll(tags)
+            } catch (e: Exception) {
+                Log.e("NewsDetailsScreen", "Greška pri dohvatu tagova: ${e.message}")
+            }
+        }
+    }
+
+    if (news == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("Vijest nije pronađena", style = MaterialTheme.typography.headlineMedium)
+        }
+        return
+    }
 
     Scaffold(
         bottomBar = {
@@ -86,12 +101,12 @@ fun NewsDetailsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                if (!news.imageUrl.isNullOrEmpty()) {
+                if (!news!!.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(news.imageUrl)
+                            .data(news!!.imageUrl)
                             .crossfade(true)
-                            .error(R.drawable.knjiga)     // fallback slika
+                            .error(R.drawable.knjiga)
                             .placeholder(R.drawable.knjiga)
                             .build(),
                         contentDescription = "Slika vijesti",
@@ -105,7 +120,7 @@ fun NewsDetailsScreen(
 
             item {
                 Text(
-                    text = news.title,
+                    text = news!!.title,
                     style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -115,7 +130,7 @@ fun NewsDetailsScreen(
 
             item {
                 Text(
-                    text = news.snippet,
+                    text = news!!.snippet,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.testTag("details_snippet")
                 )
@@ -123,7 +138,7 @@ fun NewsDetailsScreen(
 
             item {
                 Text(
-                    text = "Kategorija: ${news.category}",
+                    text = "Kategorija: ${news!!.category}",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.testTag("details_category")
                 )
@@ -131,7 +146,7 @@ fun NewsDetailsScreen(
 
             item {
                 Text(
-                    text = "Izvor: ${news.source}",
+                    text = "Izvor: ${news!!.source}",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.testTag("details_source")
                 )
@@ -139,13 +154,13 @@ fun NewsDetailsScreen(
 
             item {
                 Text(
-                    text = "Datum objave: ${news.publishedDate}",
+                    text = "Datum objave: ${news!!.publishedDate}",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.testTag("details_date")
                 )
             }
 
-            if (imageTags.isNotEmpty()) {
+            if (news!!.imageTags.isNotEmpty()) {
                 item {
                     Text(
                         text = "Tagovi slike:",
@@ -159,7 +174,7 @@ fun NewsDetailsScreen(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
-                        imageTags.forEach { tag ->
+                        news!!.imageTags.forEach { tag ->
                             AssistChip(
                                 onClick = {},
                                 label = { Text(tag) }
@@ -169,28 +184,30 @@ fun NewsDetailsScreen(
                 }
             }
 
-            item {
-                Text(
-                    text = "Povezane vijesti iz iste kategorije",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
+            if (similarNewsState.value.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Povezane vijesti iz iste kategorije",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
 
-            itemsIndexed(similarNewsState.value) { index, item ->
-                Text(
-                    text = item.title,
-                    modifier = Modifier
-                        .clickable {
-                            val route = "details/${item.uuid}?" +
-                                    "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
-                                    "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
-                                    "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
-                                    "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
-                            navController.navigate(route)
-                        }
-                        .padding(vertical = 4.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                itemsIndexed(similarNewsState.value) { _, item ->
+                    Text(
+                        text = item.title,
+                        modifier = Modifier
+                            .clickable {
+                                val route = "details/${item.uuid}?" +
+                                        "category=${URLEncoder.encode(filters.category, "UTF-8")}" +
+                                        "&startDate=${URLEncoder.encode(filters.startDate ?: "", "UTF-8")}" +
+                                        "&endDate=${URLEncoder.encode(filters.endDate ?: "", "UTF-8")}" +
+                                        "&unwanted=${URLEncoder.encode(filters.unwantedWords.joinToString(","), "UTF-8")}"
+                                navController.navigate(route)
+                            }
+                            .padding(vertical = 4.dp),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             }
 
             item {

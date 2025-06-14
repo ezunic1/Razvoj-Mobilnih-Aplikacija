@@ -6,5 +6,5 @@ import retrofit2.http.Query
 
 interface ImageApiService {
     @GET("v2/tags")
-    suspend fun getTags(@Query("image_url") imageURL: String): ImageTagResponse
+    suspend fun getTags(@Query("image_url") imageUrl: String): ImageTagResponse
 }
