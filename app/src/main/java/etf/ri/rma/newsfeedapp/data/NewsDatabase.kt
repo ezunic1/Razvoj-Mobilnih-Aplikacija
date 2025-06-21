@@ -1,8 +1,12 @@
-package etf.ri.rma.newsfeedapp.model
+package etf.ri.rma.newsfeedapp.data
 
 import android.content.Context
-import androidx.room.*
-import etf.ri.rma.newsfeedapp.dao.SavedNewsDAO
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import etf.ri.rma.newsfeedapp.model.NewsEntity
+import etf.ri.rma.newsfeedapp.model.NewsTagsCrossRef
+import etf.ri.rma.newsfeedapp.model.TagEntity
 
 @Database(
     entities = [NewsEntity::class, TagEntity::class, NewsTagsCrossRef::class],

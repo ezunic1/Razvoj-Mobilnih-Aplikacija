@@ -1,7 +1,7 @@
 package etf.ri.rma.newsfeedapp.data.network
 
 import android.util.Log
-import etf.ri.rma.newsfeedapp.dao.SavedNewsDAO
+import etf.ri.rma.newsfeedapp.data.SavedNewsDAO
 import etf.ri.rma.newsfeedapp.data.network.api.NewsApiService
 import etf.ri.rma.newsfeedapp.model.*
 import etf.ri.rma.newsfeedapp.network.NewsAPI
@@ -56,13 +56,13 @@ class NewsDAO(private val savedNewsDAO: SavedNewsDAO) {
                 val prepared = item.copy(isFeatured = true)
                 insertOnTop(prepared)
 
-                val saved = saveNewsToDb(prepared)
+                val saved = savedNewsDAO.saveNews(prepared)
                 if (saved && !prepared.imageUrl.isNullOrBlank()) {
                     try {
                         val tags = etf.ri.rma.newsfeedapp.data.network.ImageDAO().apply {
                             setApiService(etf.ri.rma.newsfeedapp.network.ImageAPI.service)
                         }.getTags(prepared.imageUrl)
-                        addTagsToNews(tags, prepared.uuid)
+                        savedNewsDAO.addTags(tags, savedNewsDAO.getNewsIdByUUID(prepared.uuid) ?: continue)
                     } catch (e: Exception) {
                         Log.e("NewsDAO", "Image tag error: ${e.message}")
                     }
@@ -91,12 +91,13 @@ class NewsDAO(private val savedNewsDAO: SavedNewsDAO) {
 
     suspend fun getSimilarStories(uuid: String): List<NewsItem> {
         similarNewsCache[uuid]?.let { return it }
+
         return try {
-            val response = apiService.getSimilarNews(uuid, apiKey, language = "en")
-            val result = response.data?.map { it.toNewsItem() }?.filter { it.uuid != uuid }?.take(2) ?: emptyList()
-            result.forEach { if (!allNews.containsKey(it.uuid)) insertOnTop(it) }
-            similarNewsCache[uuid] = result
-            result
+            val tags = savedNewsDAO.getTags(savedNewsDAO.getNewsIdByUUID(uuid) ?: return emptyList())
+            val similar = savedNewsDAO.getSimilarNews(tags.take(2))
+                .filter { it.uuid != uuid }
+            similarNewsCache[uuid] = similar
+            similar
         } catch (e: Exception) {
             emptyList()
         }
@@ -117,71 +118,8 @@ class NewsDAO(private val savedNewsDAO: SavedNewsDAO) {
         )
     }
 
-    suspend fun saveNewsToDb(item: NewsItem): Boolean {
-        if (savedNewsDAO.getNewsByUUID(item.uuid) != null) return false
-        val entity = NewsEntity(
-            uuid = item.uuid,
-            title = item.title,
-            snippet = item.snippet,
-            imageUrl = item.imageUrl,
-            category = item.category,
-            isFeatured = item.isFeatured,
-            source = item.source,
-            publishedDate = item.publishedDate
-        )
-        val result = savedNewsDAO.saveNews(entity)
-        return result != -1L
-    }
-
-    suspend fun addTagsToNews(tags: List<String>, newsUuid: String): Int {
-        val newsWithTags = savedNewsDAO.getNewsByUUID(newsUuid) ?: return 0
-        val newsId = newsWithTags.news.id
-        var newTags = 0
-        for (tag in tags) {
-            val newTagId = savedNewsDAO.insertTag(TagEntity(value = tag)).toInt()
-            if (newTagId != -1) newTags++
-            val actualId = savedNewsDAO.getTagsByValue(listOf(tag)).firstOrNull()?.id ?: newTagId
-            savedNewsDAO.insertNewsTagCrossRef(NewsTagsCrossRef(newsId, actualId))
-        }
-        return newTags
-    }
-
-    suspend fun getNewsFromDbByCategory(category: String): List<NewsItem> {
-        val newsWithTags = savedNewsDAO.getNewsWithCategory(category)
-        return newsWithTags.map {
-            NewsItem(
-                uuid = it.news.uuid,
-                title = it.news.title,
-                snippet = it.news.snippet,
-                imageUrl = it.news.imageUrl,
-                category = it.news.category,
-                isFeatured = it.news.isFeatured,
-                source = it.news.source,
-                publishedDate = it.news.publishedDate,
-                imageTags = ArrayList(it.tags.map { tag -> tag.value })
-            )
-        }
-    }
-
-    suspend fun getAllNewsFromDb(): List<NewsItem> {
-        val newsWithTags = savedNewsDAO.allNews()
-        return newsWithTags.map {
-            NewsItem(
-                uuid = it.news.uuid,
-                title = it.news.title,
-                snippet = it.news.snippet,
-                imageUrl = it.news.imageUrl,
-                category = it.news.category,
-                isFeatured = it.news.isFeatured,
-                source = it.news.source,
-                publishedDate = it.news.publishedDate,
-                imageTags = ArrayList(it.tags.map { tag -> tag.value })
-            )
-        }
-    }
-
     suspend fun preloadNewsFromDb() {
-        val cachedNews = getAllNewsFromDb()
+        val cachedNews = savedNewsDAO.allNews()
         for (item in cachedNews) {
             if (!allNews.containsKey(item.uuid)) {
                 allNews[item.uuid] = item
@@ -190,4 +128,11 @@ class NewsDAO(private val savedNewsDAO: SavedNewsDAO) {
         }
     }
 
+    suspend fun getNewsFromDbByCategory(category: String): List<NewsItem> {
+        return savedNewsDAO.getNewsWithCategory(category)
+    }
+
+    suspend fun getAllNewsFromDb(): List<NewsItem> {
+        return savedNewsDAO.allNews()
+    }
 }

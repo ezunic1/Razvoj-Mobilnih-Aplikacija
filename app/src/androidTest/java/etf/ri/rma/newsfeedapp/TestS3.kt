@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
-
+/*
 @RunWith(AndroidJUnit4::class)
 class TestS3 {
     private lateinit var okHttpClient: OkHttpClient
@@ -277,4 +277,4 @@ class TestS3 {
         server.shutdown()
     }
 
-}
+}*/

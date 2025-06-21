@@ -21,6 +21,7 @@ import etf.ri.rma.newsfeedapp.data.network.ImageDAO
 import etf.ri.rma.newsfeedapp.data.network.NewsDAO
 import etf.ri.rma.newsfeedapp.model.NewsItem
 import etf.ri.rma.newsfeedapp.model.R
+import etf.ri.rma.newsfeedapp.model.TagEntity
 import etf.ri.rma.newsfeedapp.network.ImageAPI
 import kotlinx.coroutines.isActive
 import java.net.URLEncoder
@@ -44,19 +45,19 @@ fun NewsDetailsScreen(
             similarNewsState.value = newsDAO.getSimilarStories(it.uuid)
         }
     }
-
-    // Dohvati image tagove nakon što imamo URL
     LaunchedEffect(news?.imageUrl) {
         if (!news?.imageUrl.isNullOrEmpty() && news!!.imageTags.isEmpty()) {
             try {
-                val tags = ImageDAO().apply { setApiService(ImageAPI.service) }
+                val tagStrings = ImageDAO().apply { setApiService(ImageAPI.service) }
                     .getTags(news!!.imageUrl!!)
-                news!!.imageTags.addAll(tags)
+                val tagEntities = tagStrings.map { TagEntity(value = it) }
+                news!!.imageTags = tagEntities.toMutableList()
             } catch (e: Exception) {
                 Log.e("NewsDetailsScreen", "Greška pri dohvatu tagova: ${e.message}")
             }
         }
     }
+
 
     if (news == null) {
         Column(
@@ -177,9 +178,10 @@ fun NewsDetailsScreen(
                         news!!.imageTags.forEach { tag ->
                             AssistChip(
                                 onClick = {},
-                                label = { Text(tag) }
+                                label = { Text(tag.value) }
                             )
                         }
+
                     }
                 }
             }

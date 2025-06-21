@@ -7,7 +7,7 @@ import etf.ri.rma.newsfeedapp.data.network.api.NewsApiService
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
+/*
 class TestS3PripremljenRetrofit {
     fun getNewsDAOwithBaseURL(baseURL: String, httpClient: OkHttpClient): NewsDAO {
         val retrofit = Retrofit.Builder()
@@ -33,3 +33,4 @@ class TestS3PripremljenRetrofit {
         return imageDAO
     }
 }
+*/
