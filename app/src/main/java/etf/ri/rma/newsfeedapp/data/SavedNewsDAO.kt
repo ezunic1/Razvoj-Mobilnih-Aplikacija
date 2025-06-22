@@ -78,15 +78,19 @@ interface SavedNewsDAO {
     suspend fun addTags(tags: List<String>, newsId: Int): Int {
         var newTags = 0
         for (tag in tags) {
-            val tagEntity = TagEntity(value = tag)
-            val tagId = insertTag(tagEntity).toInt().takeIf { it != -1 }
-                ?: getTagsByValue(listOf(tag)).first().id
-            val crossRef = NewsTagsCrossRef(newsId = newsId, tagId = tagId)
-            insertNewsTagCrossRef(crossRef)
-            if (tagId == tagEntity.id) newTags++
+            val existing = getTagsByValue(listOf(tag))
+            val tagId = if (existing.isEmpty()) {
+                val newId = insertTag(TagEntity(value = tag)).toInt()
+                newTags++
+                newId
+            } else {
+                existing.first().id
+            }
+            insertNewsTagCrossRef(NewsTagsCrossRef(newsId = newsId, tagId = tagId))
         }
         return newTags
     }
+
 
     suspend fun getSimilarNews(tags: List<String>): List<NewsItem> {
         val limitedTags = tags.take(2)
